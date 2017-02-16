@@ -227,7 +227,8 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
             while (samples_received != nsamps) {
                 samples_received += s->rx_stream->recv(buff_tmp[0]+samples_received,
                                                        nsamps-samples_received, s->rx_md);
-                if (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE)
+                if (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE && 
+                    s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_TIMEOUT)
                     break;
             }
         }

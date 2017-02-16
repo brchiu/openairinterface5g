@@ -134,15 +134,14 @@ void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_
     if (sched_runtime!=0) {
         struct sched_attr attr= {0};
         attr.size = sizeof(attr);
-        // This creates a .5 ms  reservation
         attr.sched_policy = SCHED_DEADLINE;
         attr.sched_runtime  = sched_runtime;
         attr.sched_deadline = sched_deadline;
         attr.sched_period   = 0;
         AssertFatal(sched_setattr(0, &attr, 0) == 0,
-                    "[SCHED] main eNB thread: sched_setattr failed %s \n",perror(errno));
-        LOG_I(HW,"[SCHED][eNB] eNB main deadline thread %lu started on CPU %d\n",
-              (unsigned long)gettid(), sched_getcpu());
+                    "[SCHED] %s thread: sched_setattr failed %s \n", name, perror(errno));
+        LOG_I(HW,"[SCHED][eNB] %s deadline thread %lu started on CPU %d\n",
+              name, (unsigned long)gettid(), sched_getcpu());
     }
 
 #else
@@ -152,6 +151,16 @@ void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_
     sp.sched_priority = sched_fifo;
     AssertFatal(pthread_setschedparam(pthread_self(),SCHED_FIFO,&sp)==0,
                 "Can't set thread priority, Are you root?\n");
+    /* Check the actual affinity mask assigned to the thread */
+    cpu_set_t *cset=CPU_ALLOC(CPU_SETSIZE);
+    if (0 == pthread_getaffinity_np(pthread_self(), CPU_ALLOC_SIZE(CPU_SETSIZE), cset)) {
+      char txt[512]={0};
+      for (int j = 0; j < CPU_SETSIZE; j++)
+        if (CPU_ISSET(j, cset))
+	  sprintf(txt+strlen(txt), " %d ", j);
+      printf("CPU Affinity of thread %s is %s\n", name, txt);
+    }
+    CPU_FREE(cset);
 #endif
 
     // Lock memory from swapping. This is a process wide call (not constraint to this thread).
