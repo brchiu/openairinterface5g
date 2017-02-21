@@ -1,23 +1,23 @@
 /*
- * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
- * except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.openairinterface.org/?page_id=698
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *-------------------------------------------------------------------------------
- * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      contact@openairinterface.org
- */
+   Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The OpenAirInterface Software Alliance licenses this file to You under
+   the OAI Public License, Version 1.0  (the "License"); you may not use this file
+   except in compliance with the License.
+   You may obtain a copy of the License at
+
+        http://www.openairinterface.org/?page_id=698
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+  -------------------------------------------------------------------------------
+   For more information about the OpenAirInterface (OAI) Software Alliance:
+        contact@openairinterface.org
+*/
 
 /***************************************************************************
                           nas_mesh.c  -  description
@@ -40,7 +40,6 @@ void nas_mesh_init(int inst)
   //---------------------------------------------------------------------------
   //  struct cx_entity *cx;
   printk("NAS_MESH_INIT Complete\n");
-
   // Request the establishment of a connexion
   //  cx=nas_COMMON_search_cx(0);
   //  if (cx==NULL)
@@ -59,7 +58,6 @@ void nas_mesh_init(int inst)
 //Equivalent to class add send 0 -f qos <x> -cr 0
 void nas_mesh_start_broadcast_sclassifier(struct cx_entity *cx,struct rb_entity *rb)
 {
-
   struct classifier_entity *gc;
   // Start debug information
 #ifdef NAS_DEBUG_CLASS
@@ -102,14 +100,12 @@ void nas_mesh_start_broadcast_sclassifier(struct cx_entity *cx,struct rb_entity 
   printk("NAS_MESH_START_DEFAULT_SCLASS - end \n");
   nas_print_classifier(gc);
 #endif
-
 }
 void nas_mesh_start_default_sclassifier(struct cx_entity *cx,struct rb_entity *rb)
 {
   //---------------------------------------------------------------------------
 #ifdef DEMO_3GSM
   struct classifier_entity *gc;
-
   // Start debug information
 #ifdef NAS_DEBUG_CLASS
   printk("NAS_MESH_START_DEFAULT_SCLASS - begin \n");
@@ -155,9 +151,10 @@ void nas_mesh_start_default_sclassifier(struct cx_entity *cx,struct rb_entity *r
 }
 
 //---------------------------------------------------------------------------
-void nas_mesh_timer(unsigned long data,struct nas_priv *gpriv)
+void nas_mesh_timer(unsigned long data)
 {
   //---------------------------------------------------------------------------
+  struct nas_priv *gpriv=(struct nas_priv *) data;
   uint8_t cxi;
   struct cx_entity *cx;
   struct rb_entity *rb;
@@ -165,13 +162,10 @@ void nas_mesh_timer(unsigned long data,struct nas_priv *gpriv)
 #ifdef NAS_DEBUG_TIMER
   printk("NAS_MESH_TIMER - begin \n");
 #endif
-
   (gpriv->timer).function=nas_mesh_timer;
   (gpriv->timer).expires=jiffies+NAS_TIMER_TICK;
-  (gpriv->timer).data=0L;
-
+  (gpriv->timer).data=data;
   return;
-
 
   for (cxi=0; cxi<NAS_CX_MAX; ++cxi) {
     cx=gpriv->cx+cxi;
@@ -190,26 +184,26 @@ void nas_mesh_timer(unsigned long data,struct nas_priv *gpriv)
 
       if (cx->countimer==0) {
         switch (cx->state) {
-        case NAS_CX_CONNECTING:
-        case NAS_CX_CONNECTING_FAILURE:
-          if (cx->retry<gpriv->retry_limit)
-            nas_mesh_DC_send_cx_establish_request(cx,gpriv);
-          else {
-            printk("NAS_MESH_TIMER: Establishment failure\n");
-            cx->state=NAS_IDLE;
-            cx->retry=0;
+          case NAS_CX_CONNECTING:
+          case NAS_CX_CONNECTING_FAILURE:
+            if (cx->retry<gpriv->retry_limit)
+              nas_mesh_DC_send_cx_establish_request(cx,gpriv);
+            else {
+              printk("NAS_MESH_TIMER: Establishment failure\n");
+              cx->state=NAS_IDLE;
+              cx->retry=0;
+              cx->countimer=NAS_TIMER_IDLE;
+            }
+
+            break;
+
+          case NAS_CX_RELEASING_FAILURE:
+            nas_mesh_DC_send_cx_release_request(cx,gpriv);
+            break;
+
+          default:
+            printk("NAS_MESH_TIMER: default value\n");
             cx->countimer=NAS_TIMER_IDLE;
-          }
-
-          break;
-
-        case NAS_CX_RELEASING_FAILURE:
-          nas_mesh_DC_send_cx_release_request(cx,gpriv);
-          break;
-
-        default:
-          printk("NAS_MESH_TIMER: default value\n");
-          cx->countimer=NAS_TIMER_IDLE;
         }
       } else
         --cx->countimer;
@@ -223,13 +217,13 @@ void nas_mesh_timer(unsigned long data,struct nas_priv *gpriv)
 
         if (rb->countimer==0) {
           switch (rb->state) {
-          case NAS_RB_DCH:
-            nas_mesh_start_default_sclassifier(cx, rb);
-            rb->countimer=NAS_TIMER_IDLE;
-            break;
+            case NAS_RB_DCH:
+              nas_mesh_start_default_sclassifier(cx, rb);
+              rb->countimer=NAS_TIMER_IDLE;
+              break;
 
-          default:
-            rb->countimer=NAS_TIMER_IDLE;
+            default:
+              rb->countimer=NAS_TIMER_IDLE;
           }
         } else {
           --rb->countimer;
@@ -251,7 +245,6 @@ int nas_mesh_DC_send_cx_establish_request(struct cx_entity *cx,struct nas_priv *
   //---------------------------------------------------------------------------
   struct nas_ue_dc_element *p;
   int bytes_wrote=0;
-
   // Start debug information
 #ifdef NAS_DEBUG_DC
   printk("NAS_MESH_DC_SEND_CX_ESTABLISH - begin \n");
@@ -267,45 +260,45 @@ int nas_mesh_DC_send_cx_establish_request(struct cx_entity *cx,struct nas_priv *
   // End debug information
 
   switch (cx->state) {
-  case NAS_CX_CONNECTING:
-  case NAS_CX_CONNECTING_FAILURE:
-  case NAS_IDLE:
-    p= (struct nas_ue_dc_element *)(gpriv->xbuffer);
-    p->type = CONN_ESTABLISH_REQ;
-    p->length =  NAS_TL_SIZE + sizeof(struct NASConnEstablishReq);
-    p->nasUEDCPrimitive.conn_establish_req.localConnectionRef = cx->lcr;
-    p->nasUEDCPrimitive.conn_establish_req.cellId = cx->cellid;
+    case NAS_CX_CONNECTING:
+    case NAS_CX_CONNECTING_FAILURE:
+    case NAS_IDLE:
+      p= (struct nas_ue_dc_element *)(gpriv->xbuffer);
+      p->type = CONN_ESTABLISH_REQ;
+      p->length =  NAS_TL_SIZE + sizeof(struct NASConnEstablishReq);
+      p->nasUEDCPrimitive.conn_establish_req.localConnectionRef = cx->lcr;
+      p->nasUEDCPrimitive.conn_establish_req.cellId = cx->cellid;
 #ifdef NAS_DEBUG_DC
-    printk ("\nCONN_ESTABLISH_REQ Buffer to Xmit: ");
-    nas_tool_print_buffer((char *)p,p->length);
+      printk ("\nCONN_ESTABLISH_REQ Buffer to Xmit: ");
+      nas_tool_print_buffer((char *)p,p->length);
 #endif
-    ++cx->retry;
+      ++cx->retry;
 #ifdef PDCP_USE_NETLINK
 #else
-    //    bytes_wrote = rtf_put(cx->sap[NAS_DC_INPUT_SAPI], p, p->length);
+      //    bytes_wrote = rtf_put(cx->sap[NAS_DC_INPUT_SAPI], p, p->length);
 #endif
-    cx->countimer=gpriv->timer_establishment;
+      cx->countimer=gpriv->timer_establishment;
 
-    if (bytes_wrote==p->length) {
-      cx->state=NAS_CX_CONNECTING;
+      if (bytes_wrote==p->length) {
+        cx->state=NAS_CX_CONNECTING;
 #ifdef NAS_DEBUG_DC
-      printk("nas_mesh_DC_send_cx_establish_req: Message sent successfully in DC-FIFO\n");
-      printk(" Local Connection reference %u\n", p->nasUEDCPrimitive.conn_establish_req.localConnectionRef);
-      printk(" Cell Identification %u\n", p->nasUEDCPrimitive.conn_establish_req.cellId);
-      print_TOOL_state(cx->state);
+        printk("nas_mesh_DC_send_cx_establish_req: Message sent successfully in DC-FIFO\n");
+        printk(" Local Connection reference %u\n", p->nasUEDCPrimitive.conn_establish_req.localConnectionRef);
+        printk(" Cell Identification %u\n", p->nasUEDCPrimitive.conn_establish_req.cellId);
+        print_TOOL_state(cx->state);
 #endif
-    } else {
-      cx->state=NAS_CX_CONNECTING_FAILURE;
-      printk("NAS_MESH_DC_SEND_CX_ESTABLISHMENT_REQUEST: Message sent failure in DC-FIFO\n");
-      print_TOOL_state(cx->state);
-    }
+      } else {
+        cx->state=NAS_CX_CONNECTING_FAILURE;
+        printk("NAS_MESH_DC_SEND_CX_ESTABLISHMENT_REQUEST: Message sent failure in DC-FIFO\n");
+        print_TOOL_state(cx->state);
+      }
 
-    return bytes_wrote;
+      return bytes_wrote;
 
-  default:
-    return -NAS_ERROR_NOTIDLE;
+    default:
+      return -NAS_ERROR_NOTIDLE;
 #ifdef NAS_DEBUG_DC
-    printk("NAS_MESH_DC_SEND_CX_ESTABLISH - NAS_ERROR_NOTIDLE \n");
+      printk("NAS_MESH_DC_SEND_CX_ESTABLISH - NAS_ERROR_NOTIDLE \n");
 #endif
   }
 }
@@ -318,7 +311,6 @@ int nas_mesh_DC_send_cx_release_request(struct cx_entity *cx,
   //---------------------------------------------------------------------------
   struct nas_ue_dc_element *p;
   int bytes_wrote=0;
-
   // Start debug information
 #ifdef NAS_DEBUG_DC
   printk("NAS_MESH_DC_SEND_CX_RELEASE - begin \n");
@@ -333,45 +325,43 @@ int nas_mesh_DC_send_cx_release_request(struct cx_entity *cx,
 
   // End debug information
   switch (cx->state) {
-  case NAS_CX_RELEASING_FAILURE:
-  case NAS_CX_DCH:
-    p= (struct nas_ue_dc_element *)(gpriv->xbuffer);
-    p->type = CONN_RELEASE_REQ;
-    p->length =  NAS_TL_SIZE + sizeof(struct NASConnReleaseReq);
-    p->nasUEDCPrimitive.conn_release_req.localConnectionRef = cx->lcr;
-    p->nasUEDCPrimitive.conn_release_req.releaseCause = NAS_CX_RELEASE_UNDEF_CAUSE;
+    case NAS_CX_RELEASING_FAILURE:
+    case NAS_CX_DCH:
+      p= (struct nas_ue_dc_element *)(gpriv->xbuffer);
+      p->type = CONN_RELEASE_REQ;
+      p->length =  NAS_TL_SIZE + sizeof(struct NASConnReleaseReq);
+      p->nasUEDCPrimitive.conn_release_req.localConnectionRef = cx->lcr;
+      p->nasUEDCPrimitive.conn_release_req.releaseCause = NAS_CX_RELEASE_UNDEF_CAUSE;
 #ifdef PDCP_USE_NETLINK
-
 #else
-    //      bytes_wrote = rtf_put(cx->sap[NAS_DC_INPUT_SAPI], p, p->length);
+      //      bytes_wrote = rtf_put(cx->sap[NAS_DC_INPUT_SAPI], p, p->length);
 #endif
 
-    if (bytes_wrote==p->length) {
-      cx->state=NAS_IDLE;
-      cx->iid4=0;
-      //      nas_TOOL_imei2iid(NAS_NULL_IMEI, (uint8_t *)cx->iid6);
-      nas_COMMON_flush_rb(cx);
-
+      if (bytes_wrote==p->length) {
+        cx->state=NAS_IDLE;
+        cx->iid4=0;
+        //      nas_TOOL_imei2iid(NAS_NULL_IMEI, (uint8_t *)cx->iid6);
+        nas_COMMON_flush_rb(cx);
 #ifdef NAS_DEBUG_DC
-      printk("NAS_MESH_DC_SEND_CX_RELEASE_REQUEST: Message sent successfully in DC-FIFO\n");
-      printk(" Local Connection Reference %u\n", p->nasUEDCPrimitive.conn_release_req.localConnectionRef);
-      printk(" Release Cause %u\n", p->nasUEDCPrimitive.conn_release_req.releaseCause);
-      print_TOOL_state(cx->state);
+        printk("NAS_MESH_DC_SEND_CX_RELEASE_REQUEST: Message sent successfully in DC-FIFO\n");
+        printk(" Local Connection Reference %u\n", p->nasUEDCPrimitive.conn_release_req.localConnectionRef);
+        printk(" Release Cause %u\n", p->nasUEDCPrimitive.conn_release_req.releaseCause);
+        print_TOOL_state(cx->state);
 #endif
-    } else {
-      ++cx->retry;
-      cx->countimer=gpriv->timer_release;
-      cx->state=NAS_CX_RELEASING_FAILURE;
-      printk("NAS_MESH_DC_SEND_CX_RELEASE_REQUEST: Message sent failure in DC-FIFO\n");
-      print_TOOL_state(cx->state);
-    }
+      } else {
+        ++cx->retry;
+        cx->countimer=gpriv->timer_release;
+        cx->state=NAS_CX_RELEASING_FAILURE;
+        printk("NAS_MESH_DC_SEND_CX_RELEASE_REQUEST: Message sent failure in DC-FIFO\n");
+        print_TOOL_state(cx->state);
+      }
 
-    return bytes_wrote;
+      return bytes_wrote;
 
-  default:
-    return -NAS_ERROR_NOTCONNECTED;
+    default:
+      return -NAS_ERROR_NOTCONNECTED;
 #ifdef NAS_DEBUG_DC
-    printk("NAS_MESH_DC_SEND_CX_RELEASE_REQUEST - NAS_ERROR_NOTCONNECTED \n");
+      printk("NAS_MESH_DC_SEND_CX_RELEASE_REQUEST - NAS_ERROR_NOTCONNECTED \n");
 #endif
   }
 }
@@ -381,13 +371,12 @@ int nas_mesh_DC_send_cx_release_request(struct cx_entity *cx,
 void nas_mesh_DC_send_sig_data_request(struct sk_buff *skb,
                                        struct cx_entity *cx,
                                        struct classifier_entity *gc,
+                                       int inst,
                                        struct nas_priv *gpriv)
 {
   //---------------------------------------------------------------------------
   struct nas_ue_dc_element *p;
-  char data_type = 'A';
   int bytes_wrote=0;
-
   // Start debug information
 #ifdef NAS_DEBUG_DC
   printk("NAS_MESH_DC_SEND_SIG - begin \n");
@@ -439,6 +428,7 @@ void nas_mesh_DC_send_sig_data_request(struct sk_buff *skb,
 
 #ifdef PDCP_USE_NETLINK
 #else
+  //char data_type = 'A';
   //  bytes_wrote += rtf_put(cx->sap[NAS_DC_INPUT_SAPI], &data_type, 1);
   //  bytes_wrote += rtf_put(cx->sap[NAS_DC_INPUT_SAPI], skb->data, skb->len);
 #endif
@@ -464,9 +454,7 @@ void nas_mesh_DC_send_peer_sig_data_request(struct cx_entity *cx, uint8_t sig_ca
   struct nas_ue_dc_element *p;
   uint8_t nas_data[10];
   unsigned int nas_length;
-  char data_type = 'Z';
   int bytes_wrote=0;
-
   // Start debug information
 #ifdef NAS_DEBUG_DC
   printk("NAS_MESH_DC_PEER_SEND_SIG - begin \n");
@@ -509,6 +497,7 @@ void nas_mesh_DC_send_peer_sig_data_request(struct cx_entity *cx, uint8_t sig_ca
 
 #ifdef PDCP_USE_NETLINK
 #else
+  // char data_type = 'Z';
   //  bytes_wrote += rtf_put(cx->sap[NAS_DC_INPUT_SAPI], &data_type, 1);
   //  bytes_wrote += rtf_put(cx->sap[NAS_DC_INPUT_SAPI], (char *)nas_data, nas_length);
 #endif
@@ -661,7 +650,6 @@ void nas_mesh_DC_decode_sig_data_ind(struct cx_entity *cx, struct nas_ue_dc_elem
   printk(" NAS Data length %u\n",p->nasUEDCPrimitive.data_transfer_ind.nasDataLength);
   printk(" NAS Data string %s\n", (uint8_t *)p+p->length);
 #endif
-
 }
 //---------------------------------------------------------------------------
 // Decode RB_ESTABLISH_IND message from RRC
@@ -669,7 +657,6 @@ void nas_mesh_DC_decode_rb_establish_ind(struct cx_entity *cx, struct nas_ue_dc_
 {
   //---------------------------------------------------------------------------
   struct rb_entity *rb;
-
   // Start debug information
 #ifdef NAS_DEBUG_DC
   printk("NAS_MESH_DC_DECODE_RB_ESTABLISH_IND - begin \n");
@@ -753,7 +740,6 @@ void nas_mesh_DC_decode_rb_release_ind(struct cx_entity *cx, struct nas_ue_dc_el
 #endif
   } else
     printk("NAS_DC_RG_RECEIVE: RB_RELEASE_IND reception, No corresponding radio bearer\n");
-
 }
 //---------------------------------------------------------------------------
 // Decode MEASUREMENT_IND message from RRC
@@ -805,7 +791,6 @@ void nas_mesh_DC_decode_measurement_ind(struct cx_entity *cx, struct nas_ue_dc_e
   cx->provider_id[0]=25;
   cx->provider_id[1]=1;
   cx->provider_id[2]=25;
-
 }
 
 //---------------------------------------------------------------------------
@@ -815,7 +800,6 @@ int nas_mesh_DC_receive(struct cx_entity *cx,struct nas_priv *gpriv)
   //---------------------------------------------------------------------------
   // Start debug information
   int bytes_read=0;
-
 #ifdef NAS_DEBUG_DC
   printk("NAS_MESH_DC_RECEIVE - begin \n");
 #endif
@@ -835,7 +819,6 @@ int nas_mesh_DC_receive(struct cx_entity *cx,struct nas_priv *gpriv)
 
   if (bytes_read>0) {
     struct nas_ue_dc_element *p;
-
     p= (struct nas_ue_dc_element *)(gpriv->rbuffer);
     //get the rest of the primitive
 #ifdef PDCP_USE_NETLINK
@@ -849,104 +832,104 @@ int nas_mesh_DC_receive(struct cx_entity *cx,struct nas_priv *gpriv)
     }
 
     switch (p->type) {
-    case CONN_ESTABLISH_RESP :
-      if (p->nasUEDCPrimitive.conn_establish_resp.localConnectionRef!=cx->lcr)
-        printk("NAS_MESH_DC_RECEIVE: CONN_ESTABLISH_RESP, Local connection reference not correct %u\n",p->nasUEDCPrimitive.conn_establish_resp.localConnectionRef);
-      else {
-        switch (cx->state) {
-        case NAS_CX_CONNECTING:
-          nas_mesh_DC_decode_cx_establish_resp(cx,p,gpriv);   // process message
-          break;
+      case CONN_ESTABLISH_RESP :
+        if (p->nasUEDCPrimitive.conn_establish_resp.localConnectionRef!=cx->lcr)
+          printk("NAS_MESH_DC_RECEIVE: CONN_ESTABLISH_RESP, Local connection reference not correct %u\n",p->nasUEDCPrimitive.conn_establish_resp.localConnectionRef);
+        else {
+          switch (cx->state) {
+            case NAS_CX_CONNECTING:
+              nas_mesh_DC_decode_cx_establish_resp(cx,p,gpriv);   // process message
+              break;
 
-        default:
-          printk("NAS_MESH_DC_RECEIVE: CONN_ESTABLISH_RESP reception, Invalid state %u\n", cx->state);
+            default:
+              printk("NAS_MESH_DC_RECEIVE: CONN_ESTABLISH_RESP reception, Invalid state %u\n", cx->state);
+          }
         }
-      }
 
-      break;
+        break;
 
-    case CONN_LOSS_IND :
-      if (p->nasUEDCPrimitive.conn_loss_ind.localConnectionRef!=cx->lcr)
-        printk("NAS_MESH_DC_RECEIVE: CONN_LOSS_IND reception, Local connection reference not correct %u\n", p->nasUEDCPrimitive.conn_loss_ind.localConnectionRef);
-      else {
-        switch (cx->state) {
-        case NAS_CX_RELEASING_FAILURE:
-          cx->retry=0;
+      case CONN_LOSS_IND :
+        if (p->nasUEDCPrimitive.conn_loss_ind.localConnectionRef!=cx->lcr)
+          printk("NAS_MESH_DC_RECEIVE: CONN_LOSS_IND reception, Local connection reference not correct %u\n", p->nasUEDCPrimitive.conn_loss_ind.localConnectionRef);
+        else {
+          switch (cx->state) {
+            case NAS_CX_RELEASING_FAILURE:
+              cx->retry=0;
 
-        case NAS_CX_DCH:
-          nas_mesh_DC_decode_cx_loss_ind(cx,p);   // process message
-          break;
+            case NAS_CX_DCH:
+              nas_mesh_DC_decode_cx_loss_ind(cx,p);   // process message
+              break;
 
-        default:
-          printk("NAS_MESH_DC_RECEIVE: CONN_LOSS_IND reception, Invalid state %u", cx->state);
+            default:
+              printk("NAS_MESH_DC_RECEIVE: CONN_LOSS_IND reception, Invalid state %u", cx->state);
+          }
         }
-      }
 
-      break;
+        break;
 
       //    case CONN_RELEASE_IND :
       //      break;
-    case DATA_TRANSFER_IND :
-      if (p->nasUEDCPrimitive.data_transfer_ind.localConnectionRef!=cx->lcr)
-        printk("NAS_MESH_DC_RECEIVE: DATA_TRANSFER_IND reception, Local connection reference not correct %u\n", p->nasUEDCPrimitive.conn_loss_ind.localConnectionRef);
-      else {
-        switch (cx->state) {
-        case NAS_CX_FACH:
-        case NAS_CX_DCH:
-          nas_mesh_DC_decode_sig_data_ind(cx,p);   // process message
-          break;
+      case DATA_TRANSFER_IND :
+        if (p->nasUEDCPrimitive.data_transfer_ind.localConnectionRef!=cx->lcr)
+          printk("NAS_MESH_DC_RECEIVE: DATA_TRANSFER_IND reception, Local connection reference not correct %u\n", p->nasUEDCPrimitive.conn_loss_ind.localConnectionRef);
+        else {
+          switch (cx->state) {
+            case NAS_CX_FACH:
+            case NAS_CX_DCH:
+              nas_mesh_DC_decode_sig_data_ind(cx,p);   // process message
+              break;
 
-        default:
-          printk("NAS_MESH_DC_RECEIVE: DATA_TRANSFER_IND reception, Invalid state %u", cx->state);
+            default:
+              printk("NAS_MESH_DC_RECEIVE: DATA_TRANSFER_IND reception, Invalid state %u", cx->state);
+          }
         }
-      }
 
-      break;
+        break;
 
-    case RB_ESTABLISH_IND :
-      if (p->nasUEDCPrimitive.rb_establish_ind.localConnectionRef!=cx->lcr)
-        printk("NAS_MESH_DC_RECEIVE: RB_ESTABLISH_IND reception, Local connexion reference not correct %u\n", p->nasUEDCPrimitive.rb_establish_ind.localConnectionRef);
-      else {
-        switch (cx->state) {
-        case NAS_CX_FACH:
-        case NAS_CX_DCH:
-          nas_mesh_DC_decode_rb_establish_ind(cx,p,gpriv);   // process message
-          break;
+      case RB_ESTABLISH_IND :
+        if (p->nasUEDCPrimitive.rb_establish_ind.localConnectionRef!=cx->lcr)
+          printk("NAS_MESH_DC_RECEIVE: RB_ESTABLISH_IND reception, Local connexion reference not correct %u\n", p->nasUEDCPrimitive.rb_establish_ind.localConnectionRef);
+        else {
+          switch (cx->state) {
+            case NAS_CX_FACH:
+            case NAS_CX_DCH:
+              nas_mesh_DC_decode_rb_establish_ind(cx,p,gpriv);   // process message
+              break;
 
-        default:
-          printk("NAS_MESH_DC_RECEIVE: RB_ESTABLISH_IND reception, Invalid state %u", cx->state);
+            default:
+              printk("NAS_MESH_DC_RECEIVE: RB_ESTABLISH_IND reception, Invalid state %u", cx->state);
+          }
         }
-      }
 
-      break;
+        break;
 
-    case RB_RELEASE_IND :
-      if (p->nasUEDCPrimitive.rb_release_ind.localConnectionRef!=cx->lcr)
-        printk("NAS_DC_MESH_RECEIVE: RB_RELEASE_IND reception, Local connection reference not correct %u\n", p->nasUEDCPrimitive.rb_release_ind.localConnectionRef);
-      else {
-        switch (cx->state) {
-        case NAS_CX_DCH:
-          nas_mesh_DC_decode_rb_release_ind(cx,p);   // process message
-          break;
+      case RB_RELEASE_IND :
+        if (p->nasUEDCPrimitive.rb_release_ind.localConnectionRef!=cx->lcr)
+          printk("NAS_DC_MESH_RECEIVE: RB_RELEASE_IND reception, Local connection reference not correct %u\n", p->nasUEDCPrimitive.rb_release_ind.localConnectionRef);
+        else {
+          switch (cx->state) {
+            case NAS_CX_DCH:
+              nas_mesh_DC_decode_rb_release_ind(cx,p);   // process message
+              break;
 
-        default:
-          printk("NAS_MESH_DC_RECEIVE: RB_RELEASE_IND reception, Invalid state %u", cx->state);
+            default:
+              printk("NAS_MESH_DC_RECEIVE: RB_RELEASE_IND reception, Invalid state %u", cx->state);
+          }
         }
-      }
 
-      break;
+        break;
 
-    case MEASUREMENT_IND :
-      if (p->nasUEDCPrimitive.measurement_ind.localConnectionRef!=cx->lcr)
-        printk("NAS_MESH_DC_RECEIVE: MEASUREMENT_IND reception, Local connection reference not correct %u\n", p->nasUEDCPrimitive.measurement_ind.localConnectionRef);
-      else {
-        nas_mesh_DC_decode_measurement_ind(cx,p);
-      }
+      case MEASUREMENT_IND :
+        if (p->nasUEDCPrimitive.measurement_ind.localConnectionRef!=cx->lcr)
+          printk("NAS_MESH_DC_RECEIVE: MEASUREMENT_IND reception, Local connection reference not correct %u\n", p->nasUEDCPrimitive.measurement_ind.localConnectionRef);
+        else {
+          nas_mesh_DC_decode_measurement_ind(cx,p);
+        }
 
-      break;
+        break;
 
-    default :
-      printk("NAS_MESH_DC_RECEIVE: Invalid message received\n");
+      default :
+        printk("NAS_MESH_DC_RECEIVE: Invalid message received\n");
     }
   }
 
@@ -961,9 +944,7 @@ int nas_mesh_DC_receive(struct cx_entity *cx,struct nas_priv *gpriv)
 int nas_mesh_GC_receive(struct nas_priv *gpriv)
 {
   //---------------------------------------------------------------------------
-
   int bytes_read=0;
-
 #ifdef NAS_DEBUG_GC
   printk("NAS_MESH_GC_RECEIVE - begin \n");
 #endif
@@ -988,27 +969,27 @@ int nas_mesh_GC_receive(struct nas_priv *gpriv)
 
     // start decoding message
     switch (p->type) {
-    case INFO_BROADCAST_IND :
+      case INFO_BROADCAST_IND :
 #ifdef PDCP_USE_NETLINK
 #else
-      //    bytes_read += rtf_get(gpriv->sap[NAS_GC_SAPI], (uint8_t *)p+p->length, p->nasUEGCPrimitive.broadcast_ind.nasDataLength);
+        //    bytes_read += rtf_get(gpriv->sap[NAS_GC_SAPI], (uint8_t *)p+p->length, p->nasUEGCPrimitive.broadcast_ind.nasDataLength);
 #endif
-      if (bytes_read!=p->length+p->nasUEGCPrimitive.broadcast_ind.nasDataLength) {
-        printk("NAS_MESH_GC_RECEIVE: INFO_BROADCAST_IND reception, Problem while reading primitive's data\n");
-        return bytes_read;
-      }
+        if (bytes_read!=p->length+p->nasUEGCPrimitive.broadcast_ind.nasDataLength) {
+          printk("NAS_MESH_GC_RECEIVE: INFO_BROADCAST_IND reception, Problem while reading primitive's data\n");
+          return bytes_read;
+        }
 
 #ifdef NAS_DEBUG_GC
-      printk("NAS_MESH_GC_RECEIVE: INFO_BROADCAST_IND reception\n");
-      printk(" Primitive length %d \n", (int)(p->type));
-      printk(" Data length %u\n", p->nasUEGCPrimitive.broadcast_ind.nasDataLength);
-      printk(" Data string %s\n", (uint8_t *)p+p->length);
+        printk("NAS_MESH_GC_RECEIVE: INFO_BROADCAST_IND reception\n");
+        printk(" Primitive length %d \n", (int)(p->type));
+        printk(" Data length %u\n", p->nasUEGCPrimitive.broadcast_ind.nasDataLength);
+        printk(" Data string %s\n", (uint8_t *)p+p->length);
 #endif //NAS_DEBUG_GC
-      return bytes_read;
+        return bytes_read;
 
-    default :
-      printk("NAS_MESH_GC_RECEIVE: Invalid message received\n");
-      return -1;
+      default :
+        printk("NAS_MESH_GC_RECEIVE: Invalid message received\n");
+        return -1;
     }
   } else
     return -1;

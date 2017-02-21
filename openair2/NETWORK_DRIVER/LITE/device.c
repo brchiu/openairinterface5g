@@ -1,38 +1,38 @@
 /*
- * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
- * except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.openairinterface.org/?page_id=698
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *-------------------------------------------------------------------------------
- * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      contact@openairinterface.org
- */
+   Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The OpenAirInterface Software Alliance licenses this file to You under
+   the OAI Public License, Version 1.0  (the "License"); you may not use this file
+   except in compliance with the License.
+   You may obtain a copy of the License at
+
+        http://www.openairinterface.org/?page_id=698
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+  -------------------------------------------------------------------------------
+   For more information about the OpenAirInterface (OAI) Software Alliance:
+        contact@openairinterface.org
+*/
 
 /*! \file device.c
-* \brief Networking Device Driver for OpenAirInterface Ethernet
-* \author  navid.nikaein,  Lionel Gauthier, raymond.knopp,
-* \company Eurecom
-* \email:navid.nikaein@eurecom.fr, lionel.gauthier@eurecom.fr,  raymond.knopp@eurecom.fr
+  \brief Networking Device Driver for OpenAirInterface Ethernet
+  \author  navid.nikaein,  Lionel Gauthier, raymond.knopp,
+  \company Eurecom
+  \email:navid.nikaein@eurecom.fr, lionel.gauthier@eurecom.fr,  raymond.knopp@eurecom.fr
 
 */
 /*******************************************************************************/
 
 #ifndef OAI_NW_DRIVER_USE_NETLINK
-#ifdef RTAI
-#include "rtai_posix.h"
-#define RTAI_IRQ 30 //try to get this irq with RTAI
-#endif // RTAI
+  #ifdef RTAI
+    #include "rtai_posix.h"
+    #define RTAI_IRQ 30 //try to get this irq with RTAI
+  #endif // RTAI
 #endif // OAI_NW_DRIVER_USE_NETLINK
 
 #include "constant.h"
@@ -46,7 +46,7 @@
 #include <linux/spinlock.h>
 #include <linux/moduleparam.h>
 #ifdef OAI_NW_DRIVER_TYPE_ETHERNET
-#include <linux/if_ether.h>
+  #include <linux/if_ether.h>
 #endif
 #include <asm/io.h>
 #include <asm/bitops.h>
@@ -57,15 +57,15 @@
 #include <asm/unistd.h>
 #include <linux/netdevice.h>
 #ifdef OAI_NW_DRIVER_TYPE_ETHERNET
-#include <linux/etherdevice.h>
+  #include <linux/etherdevice.h>
 #endif
 
 
 struct net_device *oai_nw_drv_dev[OAI_NW_DRV_NB_INSTANCES_MAX];
 
 #ifdef OAI_NW_DRIVER_USE_NETLINK
-extern void oai_nw_drv_netlink_release(void);
-extern int oai_nw_drv_netlink_init(void);
+  extern void oai_nw_drv_netlink_release(void);
+  extern int oai_nw_drv_netlink_init(void);
 #endif
 
 uint8_t NULL_IMEI[14]= {0x05, 0x04, 0x03, 0x01, 0x02 ,0x00, 0x00, 0x00, 0x05, 0x04, 0x03 ,0x00, 0x01, 0x08};
@@ -93,11 +93,9 @@ void *oai_nw_drv_interrupt(void)
 {
   //---------------------------------------------------------------------------
   uint8_t cxi;
-
   //  struct oai_nw_drv_priv *priv=netdev_priv(dev_id);
   //  unsigned int flags;
   //  priv->lock = SPIN_LOCK_UNLOCKED;
-
 #ifdef OAI_DRV_DEBUG_INTERRUPT
   printk("INTERRUPT - begin\n");
 #endif
@@ -137,7 +135,6 @@ int oai_nw_drv_open(struct net_device *dev)
 {
   //---------------------------------------------------------------------------
   struct oai_nw_drv_priv *priv=netdev_priv(dev);
-
   // Address has already been set at init
 #ifndef OAI_NW_DRIVER_USE_NETLINK
 
@@ -158,7 +155,6 @@ int oai_nw_drv_open(struct net_device *dev)
   (priv->timer).data      = (unsigned long)priv;
   (priv->timer).function  = oai_nw_drv_timer;
   //add_timer(&priv->timer);
-
   printk("[OAI_IP_DRV][%s] name = %s\n", __FUNCTION__, dev->name);
   return 0;
 }
@@ -169,7 +165,6 @@ int oai_nw_drv_stop(struct net_device *dev)
 {
   //---------------------------------------------------------------------------
   struct oai_nw_drv_priv *priv = netdev_priv(dev);
-
   printk("[OAI_IP_DRV][%s] Begin\n", __FUNCTION__);
   del_timer(&(priv->timer));
   netif_stop_queue(dev);
@@ -184,7 +179,6 @@ void oai_nw_drv_teardown(struct net_device *dev)
   //---------------------------------------------------------------------------
   struct oai_nw_drv_priv *priv;
   int              inst;
-
   printk("[OAI_IP_DRV][%s] Begin\n", __FUNCTION__);
 
   if (dev) {
@@ -198,10 +192,10 @@ void oai_nw_drv_teardown(struct net_device *dev)
 
     /*oai_nw_drv_class_flush_recv_classifier(priv);
 
-    for (cxi=0;cxi<OAI_NW_DRV_CX_MAX;cxi++) {
+      for (cxi=0;cxi<OAI_NW_DRV_CX_MAX;cxi++) {
         oai_nw_drv_common_flush_rb(priv->cx+cxi);
         oai_nw_drv_class_flush_send_classifier(priv->cx+cxi);
-    }*/
+      }*/
     printk("[OAI_IP_DRV][%s] End\n", __FUNCTION__);
   } // check dev
   else {
@@ -255,7 +249,11 @@ int oai_nw_drv_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
     // End debug information
     netif_stop_queue(dev);
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+    netif_trans_update(dev);
+#else
     dev->trans_start = jiffies;
+#endif
 #ifdef OAI_DRV_DEBUG_DEVICE
     printk("[OAI_IP_DRV][%s] step 1\n", __FUNCTION__);
 #endif
@@ -324,11 +322,14 @@ void oai_nw_drv_tx_timeout(struct net_device *dev)
   //---------------------------------------------------------------------------
   // Transmitter timeout, serious problems.
   struct oai_nw_drv_priv *priv =  netdev_priv(dev);
-
   printk("[OAI_IP_DRV][%s] begin\n", __FUNCTION__);
   //  (struct oai_nw_drv_priv *)(dev->priv)->stats.tx_errors++;
   (priv->stats).tx_errors++;
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+  netif_trans_update(dev);
+#else
   dev->trans_start = jiffies;
+#endif
   netif_wake_queue(dev);
   printk("[OAI_IP_DRV][%s] transmit timed out %s\n", __FUNCTION__,dev->name);
 }
@@ -358,12 +359,8 @@ void oai_nw_drv_init(struct net_device *dev)
   int              index;
 
   if (dev) {
-
     priv = netdev_priv(dev);
-
     memset(priv, 0, sizeof(struct oai_nw_drv_priv));
-
-
 #ifndef OAI_NW_DRIVER_TYPE_ETHERNET
     dev->type              = ARPHRD_EURECOM_LTE;
     dev->features          = NETIF_F_NO_CSUM;
@@ -382,7 +379,6 @@ void oai_nw_drv_init(struct net_device *dev)
     // __LINK_STATE_DORMANT,
     // };
     set_bit(__LINK_STATE_PRESENT, &dev->state);
-
     //
     dev->netdev_ops = &nasmesh_netdev_ops;
 #ifdef OAI_NW_DRIVER_TYPE_ETHERNET
@@ -415,14 +411,13 @@ void oai_nw_drv_init(struct net_device *dev)
 
     /*for (dscpi=0; dscpi<OAI_NW_DRV_DSCP_MAX; ++dscpi) {
         priv->rclassifier[dscpi]=NULL;
-    }
-    priv->nrclassifier=0;*/
+      }
+      priv->nrclassifier=0;*/
     //
     for (cxi=0; cxi<OAI_NW_DRV_CX_MAX; cxi++) {
 #ifdef OAI_DRV_DEBUG_DEVICE
       printk("[OAI_IP_DRV][%s] init classifiers, state and timer for MT %u\n", __FUNCTION__, cxi);
 #endif
-
       //    priv->cx[cxi].sap[NAS_DC_INPUT_SAPI] = RRC_DEVICE_DC_INPUT0;
       //    priv->cx[cxi].sap[NAS_DC_OUTPUT_SAPI] = RRC_DEVICE_DC_OUTPUT0;
       priv->cx[cxi].state      = OAI_NW_DRV_IDLE;
@@ -430,15 +425,15 @@ void oai_nw_drv_init(struct net_device *dev)
       priv->cx[cxi].retry      = 0;
       priv->cx[cxi].lcr        = cxi;
       /*priv->cx[cxi].rb         = NULL;
-      priv->cx[cxi].num_rb     = 0;
-      // initialisation of the classifier
-      for (dscpi=0; dscpi<65; ++dscpi) {
+        priv->cx[cxi].num_rb     = 0;
+        // initialisation of the classifier
+        for (dscpi=0; dscpi<65; ++dscpi) {
           priv->cx[cxi].sclassifier[dscpi] = NULL;
           priv->cx[cxi].fclassifier[dscpi] = NULL;
-      }
+        }
 
-      priv->cx[cxi].nsclassifier=0;
-      priv->cx[cxi].nfclassifier=0;
+        priv->cx[cxi].nsclassifier=0;
+        priv->cx[cxi].nfclassifier=0;
       */
       // initialisation of the IP address
       oai_nw_drv_TOOL_eNB_imei2iid(oai_nw_drv_IMEI, (uint8_t *)priv->cx[cxi].iid6, dev->addr_len);
@@ -450,10 +445,8 @@ void oai_nw_drv_init(struct net_device *dev)
     //this requires kernel patch for OAI driver: typically for RF/hard realtime emu experimentation
 #define ADDRCONF
 #ifdef ADDRCONF
-
 #ifdef OAI_NW_DRIVER_USE_NETLINK
     oai_nw_drv_TOOL_eNB_imei2iid(oai_nw_drv_IMEI, dev->dev_addr, dev->addr_len);// IMEI to device address (for stateless autoconfiguration address)
-
     oai_nw_drv_TOOL_eNB_imei2iid(oai_nw_drv_IMEI, (uint8_t *)priv->cx[0].iid6, dev->addr_len);
 #else
     oai_nw_drv_TOOL_imei2iid(oai_nw_drv_IMEI, dev->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
@@ -468,7 +461,6 @@ void oai_nw_drv_init(struct net_device *dev)
     }
 
     memcpy((uint8_t *)priv->cx[0].iid6,&oai_nw_drv_IMEI[0],dev->addr_len);
-
     printk("INIT: init IMEI to IID\n");
 #endif
     printk("[OAI_IP_DRV][%s] Setting HW addr to : ", __FUNCTION__);
@@ -498,8 +490,6 @@ int init_module (void)
   int err,inst, index;
   struct oai_nw_drv_priv *priv;
   char devicename[100];
-
-
   // Initialize parameters shared with RRC
   printk("[OAI_IP_DRV][%s] Starting NASMESH, number of IMEI parameters %d, IMEI ", __FUNCTION__, m_arg);
 
@@ -508,13 +498,9 @@ int init_module (void)
   }
 
   printk("\n");
-
 #ifndef OAI_NW_DRIVER_USE_NETLINK
-
 #ifdef RTAI //with RTAI you have to indicate which irq# you want
-
   pdcp_2_oai_nw_drv_irq=rt_request_srq(0, oai_nw_drv_interrupt, NULL);
-
 #endif
 
   if (pdcp_2_oai_nw_drv_irq == -EBUSY || pdcp_2_oai_nw_drv_irq == -EINVAL) {
@@ -524,18 +510,12 @@ int init_module (void)
     printk("[OAI_IP_DRV][%s] Interrupt %d\n", __FUNCTION__, pdcp_2_oai_nw_drv_irq);
 
   //rt_startup_irq(RTAI_IRQ);
-
   //rt_enable_irq(RTAI_IRQ);
-
-
 #endif //NETLINK
 
   for (inst=0; inst<OAI_NW_DRV_NB_INSTANCES_MAX; inst++) {
     printk("[OAI_IP_DRV][%s] begin init instance %d\n", __FUNCTION__,inst);
-
-
     sprintf(devicename,"oai%d",inst);
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     oai_nw_drv_dev[inst]  = alloc_netdev(sizeof(struct oai_nw_drv_priv),devicename, oai_nw_drv_init);
 #else
@@ -546,7 +526,6 @@ int init_module (void)
     if (oai_nw_drv_dev[inst] == NULL) {
       printk("[OAI_IP_DRV][%s][INST %02d] alloc_netdev FAILED\n", __FUNCTION__,inst);
     } else {
-
       priv = netdev_priv(oai_nw_drv_dev[inst]);
 
       if (oai_nw_drv_dev[inst]) {
@@ -576,9 +555,7 @@ int init_module (void)
     printk("[OAI_IP_DRV][%s] NETLINK failed\n", __FUNCTION__);
 
 #endif //NETLINK
-
   return err;
-
 }
 
 //---------------------------------------------------------------------------
@@ -586,9 +563,7 @@ void cleanup_module(void)
 {
   //---------------------------------------------------------------------------
   int inst;
-
   printk("[OAI_IP_DRV][CLEANUP]nasmesh_cleanup_module: begin\n");
-
 #ifndef OAI_NW_DRIVER_USE_NETLINK
 
   if (pdcp_2_oai_nw_drv_irq!=-EBUSY) {

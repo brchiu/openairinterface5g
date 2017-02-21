@@ -1,38 +1,38 @@
 /*
- * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
- * except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.openairinterface.org/?page_id=698
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *-------------------------------------------------------------------------------
- * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      contact@openairinterface.org
- */
+   Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The OpenAirInterface Software Alliance licenses this file to You under
+   the OAI Public License, Version 1.0  (the "License"); you may not use this file
+   except in compliance with the License.
+   You may obtain a copy of the License at
+
+        http://www.openairinterface.org/?page_id=698
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+  -------------------------------------------------------------------------------
+   For more information about the OpenAirInterface (OAI) Software Alliance:
+        contact@openairinterface.org
+*/
 
 /*! \file device.c
-* \brief Networking Device Driver for OpenAirInterface MESH
-* \author  navid.nikaein, yan.moret(no longer valid), michelle.wetterwald, raymond.knopp
-* \company Eurecom
-* \email: raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr, michelle.wetterwald@eurecom.fr,
+  \brief Networking Device Driver for OpenAirInterface MESH
+  \author  navid.nikaein, yan.moret(no longer valid), michelle.wetterwald, raymond.knopp
+  \company Eurecom
+  \email: raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr, michelle.wetterwald@eurecom.fr,
 
 */
 /*******************************************************************************/
 
 #ifndef PDCP_USE_NETLINK
-#ifdef RTAI
-#include "rtai_posix.h"
-#define RTAI_IRQ 30 //try to get this irq with RTAI
-#endif // RTAI
+  #ifdef RTAI
+    #include "rtai_posix.h"
+    #define RTAI_IRQ 30 //try to get this irq with RTAI
+  #endif // RTAI
 #endif // PDCP_USE_NETLINK
 
 #include "constant.h"
@@ -61,8 +61,8 @@
 struct net_device *nasdev[NB_INSTANCES_MAX];
 
 #ifdef PDCP_USE_NETLINK
-extern void nas_netlink_release(void);
-extern int nas_netlink_init(void);
+  extern void nas_netlink_release(void);
+  extern int nas_netlink_init(void);
 #endif
 
 //int bytes_wrote;
@@ -77,7 +77,6 @@ static unsigned int nas_is_clusterhead=0;
 
 int find_inst(struct net_device *dev)
 {
-
   int i;
 
   for (i=0; i<NB_INSTANCES_MAX; i++)
@@ -95,12 +94,9 @@ void *nas_interrupt(void)
 {
   //---------------------------------------------------------------------------
   uint8_t cxi;
-
   //  struct nas_priv *priv=netdev_priv(dev_id);
   //  unsigned int flags;
-
   //  priv->lock = SPIN_LOCK_UNLOCKED;
-
 #ifdef DEBUG_INTERRUPT
   printk("INTERRUPT - begin\n");
 #endif
@@ -124,11 +120,8 @@ void *nas_interrupt(void)
 int nas_open(struct net_device *dev)
 {
   //---------------------------------------------------------------------------
-  struct nas_priv *priv=netdev_priv(dev);
-
   printk("OPEN: begin\n");
   //  MOD_INC_USE_COUNT;
-
   // Address has already been set at init
 #ifndef PDCP_USE_NETLINK
 
@@ -138,16 +131,15 @@ int nas_open(struct net_device *dev)
   }
 
 #endif //PDCP_USE_NETLINK
-
   /*
-  netif_start_queue(dev);
-  //
-  init_timer(&priv->timer);
-  (priv->timer).expires=jiffies+NAS_TIMER_TICK;
-  (priv->timer).data=0L;
-  (priv->timer).function=nas_mesh_timer;
-  //  add_timer(&priv->timer);
-  //
+    netif_start_queue(dev);
+    //
+    init_timer(&priv->timer);
+    (priv->timer).expires=jiffies+NAS_TIMER_TICK;
+    (priv->timer).data=0L;
+    (priv->timer).function=nas_mesh_timer;
+    //  add_timer(&priv->timer);
+    //
   */
   printk("OPEN: name = %s, end\n", dev->name);
   return 0;
@@ -172,7 +164,6 @@ void nas_teardown(struct net_device *dev)
 {
   //---------------------------------------------------------------------------
   int cxi;
-
   struct nas_priv *priv;
   int inst;
 
@@ -185,9 +176,6 @@ void nas_teardown(struct net_device *dev)
     }
 
     printk("nas_teardown instance %d: begin\n",inst);
-
-
-
     nas_CLASS_flush_rclassifier(priv);
 
     for (cxi=0; cxi<NAS_CX_MAX; cxi++) {
@@ -228,7 +216,6 @@ int nas_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
   //---------------------------------------------------------------------------
   // Start debug information
-
   int inst;
 
   if (dev)
@@ -250,7 +237,11 @@ int nas_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
     // End debug information
     netif_stop_queue(dev);
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+    netif_trans_update(dev);
+#else
     dev->trans_start = jiffies;
+#endif
 #ifdef DEBUG_DEVICE
     printk("HARD_START_XMIT: step 1\n");
 #endif
@@ -291,7 +282,6 @@ struct net_device_stats *nas_get_stats(struct net_device *dev)
 int nas_change_mtu(struct net_device *dev, int mtu)
 {
   //---------------------------------------------------------------------------
-
   printk("CHANGE_MTU: begin\n");
 
   if ((mtu<50) || (mtu>1500))
@@ -307,11 +297,14 @@ void nas_tx_timeout(struct net_device *dev)
   //---------------------------------------------------------------------------
   // Transmitter timeout, serious problems.
   struct nas_priv *priv =  netdev_priv(dev);
-
   printk("TX_TIMEOUT: begin\n");
   //  (struct nas_priv *)(dev->priv)->stats.tx_errors++;
   (priv->stats).tx_errors++;
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+  netif_trans_update(dev);
+#else
   dev->trans_start = jiffies;
+#endif
   netif_wake_queue(dev);
   printk("TX_TIMEOUT: transmit timed out %s\n",dev->name);
 }
@@ -375,7 +368,6 @@ void nas_init(struct net_device *dev)
 #ifdef DEBUG_DEVICE
       printk("INIT: init classifiers, state and timer for MT %u\n", cxi);
 #endif
-
       //    priv->cx[cxi].sap[NAS_DC_INPUT_SAPI] = RRC_DEVICE_DC_INPUT0;
       //    priv->cx[cxi].sap[NAS_DC_OUTPUT_SAPI] = RRC_DEVICE_DC_OUTPUT0;
       priv->cx[cxi].state=NAS_IDLE;
@@ -406,21 +398,17 @@ void nas_init(struct net_device *dev)
     nas_TOOL_imei2iid(IMEI, dev->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
     nas_TOOL_imei2iid(IMEI, (uint8_t *)priv->cx[0].iid6);
 #else
-    nas_TOOL_imei2iid(nas_IMEI, dev->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
-    nas_TOOL_imei2iid(nas_IMEI, (uint8_t *)priv->cx[0].iid6);
+    nas_TOOL_imei2iid((uint8_t *)nas_IMEI, dev->dev_addr); // IMEI to device address (for stateless autoconfiguration address)
+    nas_TOOL_imei2iid((uint8_t *)nas_IMEI, (uint8_t *)priv->cx[0].iid6);
 #endif
     // this is more appropriate for user space soft realtime emulation
 #else
     memcpy(dev->dev_addr,&nas_IMEI[0],8);
     printk("Setting HW addr to : %X%X\n",*((unsigned int *)&dev->dev_addr[0]),*((unsigned int *)&dev->dev_addr[4]));
-
-    ((unsigned char*)dev->dev_addr)[7] = (unsigned char)find_inst(dev);
-
+    ((unsigned char *)dev->dev_addr)[7] = (unsigned char)find_inst(dev);
     memcpy((uint8_t *)priv->cx[0].iid6,&nas_IMEI[0],8);
-
     printk("INIT: init IMEI to IID\n");
 #endif
-
     printk("INIT: end\n");
     return;
   }  // instance value check
@@ -436,18 +424,11 @@ int init_module (void)
   int err,inst;
   struct nas_priv *priv;
   char devicename[100];
-
-
   // Initialize parameters shared with RRC
-
   printk("Starting NASMESH, number of IMEI paramters %d, IMEI %X%X\n",m_arg,nas_IMEI[0],nas_IMEI[1]);
-
 #ifndef PDCP_USE_NETLINK
-
 #ifdef RTAI //with RTAI you have to indicate which irq# you want
-
   pdcp_2_nas_irq=rt_request_srq(0, nas_interrupt, NULL);
-
 #endif
 
   if (pdcp_2_nas_irq == -EBUSY || pdcp_2_nas_irq == -EINVAL) {
@@ -457,16 +438,11 @@ int init_module (void)
     printk("[NAS][INIT]: Interrupt %d\n", pdcp_2_nas_irq);
 
   //rt_startup_irq(RTAI_IRQ);
-
   //rt_enable_irq(RTAI_IRQ);
-
-
 #endif //NETLINK
 
   for (inst=0; inst<NB_INSTANCES_MAX; inst++) {
     printk("[NAS][INIT] nasmesh_init_module: begin init instance %d\n",inst);
-
-
     sprintf(devicename,"oai%d",inst);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     nasdev[inst]  = alloc_netdev(sizeof(struct nas_priv),devicename, nas_init);
@@ -478,15 +454,12 @@ int init_module (void)
     if (nasdev[inst]) {
       nas_mesh_init(inst);
       //memcpy(nasdev[inst]->dev_addr,&nas_IMEI[0],8);
-      nas_TOOL_imei2iid(nas_IMEI, nasdev[inst]->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
-      nas_TOOL_imei2iid(nas_IMEI, (uint8_t *)priv->cx[0].iid6);
+      nas_TOOL_imei2iid((uint8_t *)nas_IMEI, nasdev[inst]->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
+      nas_TOOL_imei2iid((uint8_t *)nas_IMEI, (uint8_t *)priv->cx[0].iid6);
       // TO HAVE DIFFERENT HW @
-      ((unsigned char*)nasdev[inst]->dev_addr)[7] = ((unsigned char*)nasdev[inst]->dev_addr)[7] + (unsigned char)inst + 1;
+      ((unsigned char *)nasdev[inst]->dev_addr)[7] = ((unsigned char *)nasdev[inst]->dev_addr)[7] + (unsigned char)inst + 1;
       printk("Setting HW addr for INST %d to : %X%X\n",inst,*((unsigned int *)&nasdev[inst]->dev_addr[0]),*((unsigned int *)&nasdev[inst]->dev_addr[4]));
-
     }
-
-
 
     err= register_netdev(nasdev[inst]);
 
@@ -503,23 +476,16 @@ int init_module (void)
     printk("[NAS][INIT] NETLINK failed\n");
 
   printk("[NAS][INIT] NETLINK INIT\n");
-
 #endif //NETLINK
-
   return err;
-
 }
 
 //---------------------------------------------------------------------------
 void cleanup_module(void)
 {
   //---------------------------------------------------------------------------
-
   int inst;
-
-
   printk("[NAS][CLEANUP]nasmesh_cleanup_module: begin\n");
-
 #ifndef PDCP_USE_NETLINK
 
   if (pdcp_2_nas_irq!=-EBUSY) {
@@ -533,13 +499,9 @@ void cleanup_module(void)
     // Start IRQ linux
     //    free_irq(priv->irq, NULL);
     // End IRQ linux
-
   }
 
 #else // NETLINK
-
-
-
 #endif //NETLINK
 
   for (inst=0; inst<NB_INSTANCES_MAX; inst++) {
@@ -561,31 +523,31 @@ void cleanup_module(void)
 
 #if  LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
 
-#define DRV_NAME    "NASMESH"
-#define DRV_VERSION   "3.0.2"DRV_NAME
-#define DRV_DESCRIPTION "OPENAIR MESH Device Driver"
-#define DRV_COPYRIGHT "-Copyright(c) GNU GPL Eurecom 2009"
-#define DRV_AUTHOR      "Raymond Knopp, and Navid Nikaein: <firstname.name@eurecom.fr>"DRV_COPYRIGHT
+  #define DRV_NAME    "NASMESH"
+  #define DRV_VERSION   "3.0.2"DRV_NAME
+  #define DRV_DESCRIPTION "OPENAIR MESH Device Driver"
+  #define DRV_COPYRIGHT "-Copyright(c) GNU GPL Eurecom 2009"
+  #define DRV_AUTHOR      "Raymond Knopp, and Navid Nikaein: <firstname.name@eurecom.fr>"DRV_COPYRIGHT
 
-module_param_array(nas_IMEI,uint,&m_arg,0444);
-MODULE_PARM_DESC(nas_IMEI,"The IMEI Hardware address (64-bit, decimal nibbles)");
+  module_param_array(nas_IMEI,uint,&m_arg,0444);
+  MODULE_PARM_DESC(nas_IMEI,"The IMEI Hardware address (64-bit, decimal nibbles)");
 
-module_param(nas_is_clusterhead,uint,0444);
-MODULE_PARM_DESC(nas_is_clusterhead,"The Clusterhead Indicator");
+  module_param(nas_is_clusterhead,uint,0444);
+  MODULE_PARM_DESC(nas_is_clusterhead,"The Clusterhead Indicator");
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,0,1)
-MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION(DRV_DESCRIPTION);
-MODULE_AUTHOR(DRV_AUTHOR);
-#endif
+  #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,0,1)
+    MODULE_LICENSE("GPL");
+    MODULE_DESCRIPTION(DRV_DESCRIPTION);
+    MODULE_AUTHOR(DRV_AUTHOR);
+  #endif
 #endif
 
 
 
 /*
-//---------------------------------------------------------------------------
-//module_init(init_nasmesh);
-//module_exit(exit_nasmesh);
-//---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
+  //module_init(init_nasmesh);
+  //module_exit(exit_nasmesh);
+  //---------------------------------------------------------------------------
 
 */

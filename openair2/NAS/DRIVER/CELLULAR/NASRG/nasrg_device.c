@@ -1,36 +1,36 @@
 /*
- * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
- * except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.openairinterface.org/?page_id=698
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *-------------------------------------------------------------------------------
- * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      contact@openairinterface.org
- */
+   Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The OpenAirInterface Software Alliance licenses this file to You under
+   the OAI Public License, Version 1.0  (the "License"); you may not use this file
+   except in compliance with the License.
+   You may obtain a copy of the License at
+
+        http://www.openairinterface.org/?page_id=698
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+  -------------------------------------------------------------------------------
+   For more information about the OpenAirInterface (OAI) Software Alliance:
+        contact@openairinterface.org
+*/
 
 /*! \file nasmt_device.c
-* \brief Networking Device Driver for OpenAirInterface CELLULAR version - RG
-* \author  michelle.wetterwald, navid.nikaein, raymond.knopp, Lionel Gauthier
-* \company Eurecom
-* \email: michelle.wetterwald@eurecom.fr, raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr,  lionel.gauthier@eurecom.fr
+  \brief Networking Device Driver for OpenAirInterface CELLULAR version - RG
+  \author  michelle.wetterwald, navid.nikaein, raymond.knopp, Lionel Gauthier
+  \company Eurecom
+  \email: michelle.wetterwald@eurecom.fr, raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr,  lionel.gauthier@eurecom.fr
 */
 /*******************************************************************************/
 #ifndef PDCP_USE_NETLINK
-#ifdef RTAI
-#include "rtai_posix.h"
-#define RTAI_IRQ 30 //try to get this irq with RTAI
-#endif // RTAI
+  #ifdef RTAI
+    #include "rtai_posix.h"
+    #define RTAI_IRQ 30 //try to get this irq with RTAI
+  #endif // RTAI
 #endif // PDCP_USE_NETLINK
 //:::::::::::::::::::::::::::::::::::::::;;
 #include "nasrg_variables.h"
@@ -42,7 +42,7 @@
 #include <linux/init.h>
 #include <linux/spinlock.h>
 #ifdef NAS_DRIVER_TYPE_ETHERNET
-#include <linux/if_ether.h>
+  #include <linux/if_ether.h>
 #endif
 #include <asm/io.h>
 #include <asm/bitops.h>
@@ -53,7 +53,7 @@
 #include <asm/unistd.h>
 #include <linux/netdevice.h>
 #ifdef NAS_DRIVER_TYPE_ETHERNET
-#include <linux/etherdevice.h>
+  #include <linux/etherdevice.h>
 #endif
 //:::::::::::::::::::::::::::::::::::::::;;
 /* Global variables */
@@ -67,8 +67,8 @@ uint8_t NAS_NULL_IMEI[14]= {0x00, 0x00, 0x00, 0x00, 0x00 ,0x00, 0x00, 0x00, 0x00
 uint16_t local_rg_cell_id;
 
 #ifdef PDCP_USE_NETLINK
-extern void nasrg_netlink_release(void);
-extern int nasrg_netlink_init(void);
+  extern void nasrg_netlink_release(void);
+  extern int nasrg_netlink_init(void);
 #endif
 extern void nasrg_ASCTL_timer(unsigned long data);
 
@@ -103,9 +103,7 @@ int nasrg_open(struct net_device *dev)
 {
   //---------------------------------------------------------------------------
   printk("nasrg_open: begin\n");
-
   gpriv=netdev_priv(dev);
-
   // Address has already been set at init
 #ifndef PDCP_USE_NETLINK
 
@@ -141,7 +139,6 @@ int nasrg_stop(struct net_device *dev)
   printk("nasrg_stop: begin\n");
   del_timer(&priv->timer);
   netif_stop_queue(dev);
-
   printk("nasrg_stop: name = %s, end\n", dev->name);
   return 0;
 }
@@ -154,7 +151,6 @@ void nasrg_teardown(struct net_device *dev)
 #ifndef PDCP_USE_NETLINK
   struct nas_priv *priv = netdev_priv(dev);
 #endif //PDCP_USE_NETLINK
-
   printk("nasrg_teardown: begin\n");
 
   if (dev) {
@@ -166,11 +162,9 @@ void nasrg_teardown(struct net_device *dev)
     }
 
 #endif //PDCP_USE_NETLINK
-
 #ifdef PDCP_USE_NETLINK
     nasrg_netlink_release();
 #endif //PDCP_USE_NETLINK
-
     //  for (sapi=0; sapi<NAS_SAPI_MAX; ++sapi)
     //    close(priv->sap[sapi]);
     nasrg_CLASS_flush_rclassifier();
@@ -226,7 +220,11 @@ int nasrg_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
   // End debug information
   netif_stop_queue(dev);
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+  netif_trans_update(dev);
+#else
   dev->trans_start = jiffies;
+#endif
 #ifdef NAS_DEBUG_SEND_DETAIL
   printk("nasrg_hard_start_xmit: step 1\n");
 #endif
@@ -296,7 +294,11 @@ void nasrg_tx_timeout(struct net_device *dev)
   printk("nasrg_tx_timeout: begin\n");
   //  ((struct nas_priv *)(dev->priv))->stats.tx_errors++;
   (gpriv->stats).tx_errors++;
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+  netif_trans_update(dev);
+#else
   dev->trans_start = jiffies;
+#endif
   netif_wake_queue(dev);
   printk("nasrg_tx_timeout: transmit timed out %s\n",dev->name);
 }
@@ -330,16 +332,13 @@ void nasrg_init(struct net_device *dev)
 {
   //---------------------------------------------------------------------------
   uint8_t cxi, dscpi;
-
   printk("nasrg_init: begin\n");
 
   if (dev) {
     gpriv=netdev_priv(dev);
-
     memset(gpriv, 0, sizeof(struct nas_priv));
     // Initialize function pointers
     dev->netdev_ops = &nasrg_netdev_ops;
-
 #ifndef NAS_DRIVER_TYPE_ETHERNET
     dev->type = ARPHRD_EURUMTS;
     dev->features = NETIF_F_NO_CSUM;
@@ -358,7 +357,6 @@ void nasrg_init(struct net_device *dev)
     // __LINK_STATE_DORMANT,
     // };
     set_bit(__LINK_STATE_PRESENT, &dev->state);
-
 #ifdef NAS_DRIVER_TYPE_ETHERNET
     // overwrite values written above ( header_ops,type,hard_header_len,mtu,addr_len,tx_queue_len,flags,broadcast)
     printk("\nnasrg_init: WARNING Driver type ETHERNET\n");
@@ -367,7 +365,6 @@ void nasrg_init(struct net_device *dev)
     //
     // Initialize private structure
     gpriv->rx_flags = NAS_RESET_RX_FLAGS;
-
     gpriv->sap[NAS_GC_SAPI] = RRC_DEVICE_GC;
     gpriv->sap[NAS_NT_SAPI] = RRC_DEVICE_NT;
     gpriv->cx[0].sap[NAS_DC_INPUT_SAPI] = RRC_DEVICE_DC_INPUT0;
@@ -411,7 +408,6 @@ void nasrg_init(struct net_device *dev)
     }
 
     spin_lock_init(&gpriv->lock);
-
     nasrg_TOOL_RGimei2iid(NAS_RG_IMEI, dev->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
     printk("nasrg_init: init IMEI to IID\n");
     nasrg_ASCTL_init();
@@ -431,9 +427,7 @@ int init_module (void)
   int inst = 0;
   struct nas_priv *priv;
   char devicename[100];
-
   printk("\n\n\n\nnasrg_init_module: begin \n");
-
   // Initialize parameters shared with RRC
 #ifndef PDCP_USE_NETLINK
 
@@ -446,7 +440,6 @@ int init_module (void)
 
   printk("nasrg_init_module: pt_nas_rg_irq valid \n");
 #endif
-
   /*
     if (pt_rg_own_cell_id==NULL){
       printk("nasrg_init_module: shared cell_id parameter not initialised\n");
@@ -455,10 +448,9 @@ int init_module (void)
       return err;
     }
     printk("nasrg_init_module: pt_rg_own_cell_id valid \n");
-    *pt_rg_own_cell_id = NASRG_OWN_CELLID;
+     pt_rg_own_cell_id = NASRG_OWN_CELLID;
   */
   local_rg_cell_id = NASRG_OWN_CELLID;
-
   // Allocate device structure
   sprintf(devicename,"oai%d",inst);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
@@ -501,7 +493,6 @@ int init_module (void)
 
   printk("nasrg_init_module: NETLINK INIT successful\n");
 #endif //NETLINK
-
   err= register_netdev(gdev);
 
   if (err) {

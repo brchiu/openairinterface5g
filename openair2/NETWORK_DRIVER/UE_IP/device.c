@@ -1,38 +1,38 @@
 /*
- * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
- * except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.openairinterface.org/?page_id=698
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *-------------------------------------------------------------------------------
- * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      contact@openairinterface.org
- */
+   Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The OpenAirInterface Software Alliance licenses this file to You under
+   the OAI Public License, Version 1.0  (the "License"); you may not use this file
+   except in compliance with the License.
+   You may obtain a copy of the License at
+
+        http://www.openairinterface.org/?page_id=698
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+  -------------------------------------------------------------------------------
+   For more information about the OpenAirInterface (OAI) Software Alliance:
+        contact@openairinterface.org
+*/
 
 /*! \file device.c
-* \brief Networking Device Driver for OpenAirInterface
-* \author  navid nikaein,  Lionel Gauthier, raymond knopp
-* \company Eurecom
-* \email: raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr, lionel.gauthier@eurecom.fr
+  \brief Networking Device Driver for OpenAirInterface
+  \author  navid nikaein,  Lionel Gauthier, raymond knopp
+  \company Eurecom
+  \email: raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr, lionel.gauthier@eurecom.fr
 
 */
 /*******************************************************************************/
 
 #ifndef OAI_NW_DRIVER_USE_NETLINK
-#ifdef RTAI
-#include "rtai_posix.h"
-#define RTAI_IRQ 30 //try to get this irq with RTAI
-#endif // RTAI
+  #ifdef RTAI
+    #include "rtai_posix.h"
+    #define RTAI_IRQ 30 //try to get this irq with RTAI
+  #endif // RTAI
 #endif // OAI_NW_DRIVER_USE_NETLINK
 
 #include "constant.h"
@@ -58,8 +58,8 @@
 struct net_device *ue_ip_dev[UE_IP_NB_INSTANCES_MAX];
 
 #ifdef OAI_NW_DRIVER_USE_NETLINK
-extern void ue_ip_netlink_release(void);
-extern int ue_ip_netlink_init(void);
+  extern void ue_ip_netlink_release(void);
+  extern int ue_ip_netlink_init(void);
 #endif
 
 //---------------------------------------------------------------------------
@@ -83,11 +83,9 @@ void *ue_ip_interrupt(void)
 {
   //---------------------------------------------------------------------------
   uint8_t cxi;
-
   //  ue_ip_priv_t *priv_p=netdev_priv(dev_id);
   //  unsigned int flags;
   //  priv_p->lock = SPIN_LOCK_UNLOCKED;
-
 #ifdef OAI_DRV_DEBUG_INTERRUPT
   printk("INTERRUPT - begin\n");
 #endif
@@ -127,7 +125,6 @@ int ue_ip_open(struct net_device *dev_pP)
 {
   //---------------------------------------------------------------------------
   ue_ip_priv_t *priv_p=netdev_priv(dev_pP);
-
   // Address has already been set at init
 #ifndef OAI_NW_DRIVER_USE_NETLINK
 
@@ -149,7 +146,6 @@ int ue_ip_open(struct net_device *dev_pP)
   (priv_p->timer).data      = (unsigned long)priv_p;
   (priv_p->timer).function  = ue_ip_timer;
   //add_timer(&priv_p->timer);
-
   printk("[UE_IP_DRV][%s] name = %s\n", __FUNCTION__, dev_pP->name);
   return 0;
 }
@@ -160,7 +156,6 @@ int ue_ip_stop(struct net_device *dev_pP)
 {
   //---------------------------------------------------------------------------
   ue_ip_priv_t *priv_p = netdev_priv(dev_pP);
-
   printk("[UE_IP_DRV][%s] Begin\n", __FUNCTION__);
   del_timer(&(priv_p->timer));
   netif_stop_queue(dev_pP);
@@ -175,7 +170,6 @@ void ue_ip_teardown(struct net_device *dev_pP)
   //---------------------------------------------------------------------------
   ue_ip_priv_t    *priv_p;
   int              inst;
-
   printk("[UE_IP_DRV][%s] Begin\n", __FUNCTION__);
 
   if (dev_pP) {
@@ -186,7 +180,6 @@ void ue_ip_teardown(struct net_device *dev_pP)
       printk("[UE_IP_DRV][%s] ERROR, couldn't find instance\n", __FUNCTION__);
       return;
     }
-
 
     printk("[UE_IP_DRV][%s] End\n", __FUNCTION__);
   } // check dev_pP
@@ -243,7 +236,11 @@ int ue_ip_hard_start_xmit(struct sk_buff *skb_pP, struct net_device *dev_pP)
 
     // End debug information
     netif_stop_queue(dev_pP);
-    dev_pP->trans_start = jiffies;
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+    netif_trans_update(dev_pP);
+#else
+    dev->trans_start = jiffies;
+#endif
 #ifdef OAI_DRV_DEBUG_DEVICE
     printk("[UE_IP_DRV][%s] step 1\n", __FUNCTION__);
 #endif
@@ -311,11 +308,14 @@ void ue_ip_tx_timeout(struct net_device *dev_pP)
   //---------------------------------------------------------------------------
   // Transmitter timeout, serious problems.
   ue_ip_priv_t *priv_p =  netdev_priv(dev_pP);
-
   printk("[UE_IP_DRV][%s] begin\n", __FUNCTION__);
   //  (ue_ip_priv_t *)(dev_pP->priv_p)->stats.tx_errors++;
   (priv_p->stats).tx_errors++;
-  dev_pP->trans_start = jiffies;
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+  netif_trans_update(dev_pP);
+#else
+  dev->trans_start = jiffies;
+#endif
   netif_wake_queue(dev_pP);
   printk("[UE_IP_DRV][%s] transmit timed out %s\n", __FUNCTION__,dev_pP->name);
 }
@@ -363,8 +363,6 @@ int init_module (void)
   //---------------------------------------------------------------------------
   int err,inst;
   char devicename[100];
-
-
   // Initialize parameters shared with RRC
   printk("[UE_IP_DRV][%s] Starting OAI IP driver", __FUNCTION__);
 
@@ -399,7 +397,6 @@ int init_module (void)
   }
 
   return err;
-
 }
 
 //---------------------------------------------------------------------------
@@ -407,7 +404,6 @@ void cleanup_module(void)
 {
   //---------------------------------------------------------------------------
   int inst;
-
   printk("[UE_IP_DRV][CLEANUP] begin\n");
 
   for (inst=0; inst<UE_IP_NB_INSTANCES_MAX; inst++) {

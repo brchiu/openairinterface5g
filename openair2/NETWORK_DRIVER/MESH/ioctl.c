@@ -1,23 +1,23 @@
 /*
- * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
- * except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.openairinterface.org/?page_id=698
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *-------------------------------------------------------------------------------
- * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      contact@openairinterface.org
- */
+   Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The OpenAirInterface Software Alliance licenses this file to You under
+   the OAI Public License, Version 1.0  (the "License"); you may not use this file
+   except in compliance with the License.
+   You may obtain a copy of the License at
+
+        http://www.openairinterface.org/?page_id=698
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+  -------------------------------------------------------------------------------
+   For more information about the OpenAirInterface (OAI) Software Alliance:
+        contact@openairinterface.org
+*/
 
 #include "local.h"
 #include "ioctl.h"
@@ -115,7 +115,6 @@ void nas_set_msg_cx_establishment_reply(struct nas_msg_cx_establishment_reply *m
                                         struct nas_priv *priv)
 {
   //---------------------------------------------------------------------------
-
   struct cx_entity *cx;
   cx=nas_COMMON_search_cx(msgreq->lcr,priv);
 
@@ -124,7 +123,6 @@ void nas_set_msg_cx_establishment_reply(struct nas_msg_cx_establishment_reply *m
     msgrep->status=nas_mesh_DC_send_cx_establish_request(cx,priv);
   } else
     msgrep->status=-NAS_ERROR_NOTCORRECTLCR;
-
 }
 //---------------------------------------------------------------------------
 int nas_ioCTL_cx_establishment_request(struct nas_ioctl *gifr,
@@ -174,7 +172,6 @@ int nas_ioCTL_cx_release_request(struct nas_ioctl *gifr,struct nas_priv *priv)
   //---------------------------------------------------------------------------
   struct nas_msg_cx_release_request msgreq;
   struct nas_msg_cx_release_reply msgrep;
-
   printk("NAS_IOCTL_CX_RELEASE: connection release requested\n");
 
   if (copy_from_user(&msgreq, gifr->msg, sizeof(msgreq))) {
@@ -372,26 +369,26 @@ void nas_set_msg_class_list_reply(
   list=(struct nas_msg_class_list_reply *)(msgrep+1);
 
   switch(msgreq->dir) {
-  case NAS_DIRECTION_SEND:
-    cx=nas_COMMON_search_cx(msgreq->lcr,priv);
+    case NAS_DIRECTION_SEND:
+      cx=nas_COMMON_search_cx(msgreq->lcr,priv);
 
-    if (cx==NULL) {
+      if (cx==NULL) {
+        msgrep[0]=0;
+        return;
+      }
+
+      gc=cx->sclassifier[msgreq->dscp];
+      break;
+
+    case NAS_DIRECTION_RECEIVE:
+      cx=NULL;
+      gc=priv->rclassifier[msgreq->dscp];
+      break;
+
+    default:
+      cx=NULL;
       msgrep[0]=0;
       return;
-    }
-
-    gc=cx->sclassifier[msgreq->dscp];
-    break;
-
-  case NAS_DIRECTION_RECEIVE:
-    cx=NULL;
-    gc=priv->rclassifier[msgreq->dscp];
-    break;
-
-  default:
-    cx=NULL;
-    msgrep[0]=0;
-    return;
   }
 
   for (cli=0; (gc!=NULL)&&(cli<NAS_LIST_CLASS_MAX); gc=gc->next, ++cli) {
@@ -403,15 +400,15 @@ void nas_set_msg_class_list_reply(
     list[cli].version=gc->version;
 
     switch(gc->version) {
-    case 4:
-      list[cli].saddr.ipv4 = gc->saddr.ipv4;
-      list[cli].daddr.ipv4 = gc->daddr.ipv4;
-      break;
+      case 4:
+        list[cli].saddr.ipv4 = gc->saddr.ipv4;
+        list[cli].daddr.ipv4 = gc->daddr.ipv4;
+        break;
 
-    case 6:
-      list[cli].saddr.ipv6 = gc->saddr.ipv6;
-      list[cli].daddr.ipv6 = gc->daddr.ipv6;
-      break;
+      case 6:
+        list[cli].saddr.ipv6 = gc->saddr.ipv6;
+        list[cli].daddr.ipv6 = gc->daddr.ipv6;
+        break;
     }
 
     list[cli].protocol=gc->protocol;
@@ -462,9 +459,7 @@ void nas_set_msg_class_add_reply(
   struct classifier_entity *gc,*gc2;
   unsigned char *saddr,*daddr;
   unsigned int *saddr32,*daddr32;
-
   printk("[NAS][CLASS] nas_set_msg_class_add_reply\n");
-
 
   if (msgreq->dscp>NAS_DSCP_MAX) {
     printk("NAS_SET_MSG_CLASS_ADD_REPLY: Incoherent parameter value\n");
@@ -473,15 +468,12 @@ void nas_set_msg_class_add_reply(
   }
 
   if (msgreq->dir==NAS_DIRECTION_SEND) {
-
-
     struct cx_entity *cx;
     cx=nas_COMMON_search_cx(msgreq->lcr,priv);
 
     if (cx!=NULL) {
       printk("NAS_SET_MSG_CLASS_ADD_REPLY: DSCP/EXP %d, Classref %d, RB %u\n", msgreq->dscp, msgreq->classref,msgreq->rab_id );
       gc=nas_CLASS_add_sclassifier(cx, msgreq->dscp, msgreq->classref);
-
       printk("NAS_SET_MSG_CLASS_ADD_REPLY: %p %p\n" , msgreq, gc);
 
       if (gc==NULL) {
@@ -494,7 +486,6 @@ void nas_set_msg_class_add_reply(
     }
 
     gc->rab_id=msgreq->rab_id;
-
     gc->rb=nas_COMMON_search_rb(cx, gc->rab_id);
     printk("NAS_SET_MSG_CLASS_ADD_REPLY: gc_rb %p %u \n", gc->rb, gc->rab_id);
   } else {
@@ -509,7 +500,6 @@ void nas_set_msg_class_add_reply(
       }
 
       gc->rab_id=msgreq->rab_id;
-
     } else {
       msgrep->status=-NAS_ERROR_NOTCORRECTDIR;
       return;
@@ -520,67 +510,55 @@ void nas_set_msg_class_add_reply(
   }
 
   printk("[NAS][CLASS] Getting addresses ...\n");
-
   nas_TOOL_fct(gc, msgreq->fct);
   gc->version=msgreq->version;
 
   switch(gc->version) {
-  case 4:
-    gc->saddr.ipv4=msgreq->saddr.ipv4;
-    gc->daddr.ipv4=msgreq->daddr.ipv4;
+    case 4:
+      gc->saddr.ipv4=msgreq->saddr.ipv4;
+      gc->daddr.ipv4=msgreq->daddr.ipv4;
+      // #ifdef NAS_CLASS_DEBUG
+      saddr = (unsigned char *)&gc->saddr.ipv4;
+      daddr = (unsigned char *)&gc->daddr.ipv4;
+      printk("[NAS][CLASS] Adding IPv4 %d.%d.%d.%d -> %d.%d.%d.%d\n",
+             saddr[0],saddr[1],saddr[2],saddr[3],
+             daddr[0],daddr[1],daddr[2],daddr[3]);
+      //#endif
+      gc->splen=msgreq->splen;
+      gc->dplen=msgreq->dplen;
+      break;
 
+    case 6:
+      memcpy(&gc->saddr.ipv6,&msgreq->saddr.ipv6,16);
+      memcpy(&gc->daddr.ipv6,&msgreq->daddr.ipv6,16);
+      saddr32 = (unsigned int *)&gc->saddr.ipv6;
+      daddr32 = (unsigned int *)&gc->daddr.ipv6;
+      printk("[NAS][CLASS] Adding IPv6 %X:%X:%X:%X -> %X.%X.%X.%X\n",
+             saddr32[0],saddr32[1],saddr32[2],saddr32[3],
+             daddr32[0],daddr32[1],daddr32[2],daddr32[3]);
+      gc->splen=msgreq->splen;
+      gc->dplen=msgreq->dplen;
+      break;
 
+    case NAS_MPLS_VERSION_CODE:
+      printk("[NAS][CLASS] Adding MPLS label %d with exp %d\n",
+             msgreq->daddr.mpls_label,msgreq->dscp);
+      gc->daddr.mpls_label = msgreq->daddr.mpls_label;
+      break;
 
-    // #ifdef NAS_CLASS_DEBUG
-    saddr = (unsigned char *)&gc->saddr.ipv4;
-    daddr = (unsigned char *)&gc->daddr.ipv4;
+    case 0:
+      gc->saddr.ipv6.s6_addr32[0]=0;
+      gc->daddr.ipv6.s6_addr32[1]=0;
+      gc->saddr.ipv6.s6_addr32[2]=0;
+      gc->daddr.ipv6.s6_addr32[3]=0;
+      gc->splen=0;
+      gc->dplen=0;
+      break;
 
-    printk("[NAS][CLASS] Adding IPv4 %d.%d.%d.%d -> %d.%d.%d.%d\n",
-           saddr[0],saddr[1],saddr[2],saddr[3],
-           daddr[0],daddr[1],daddr[2],daddr[3]);
-
-
-
-    //#endif
-    gc->splen=msgreq->splen;
-    gc->dplen=msgreq->dplen;
-    break;
-
-  case 6:
-    memcpy(&gc->saddr.ipv6,&msgreq->saddr.ipv6,16);
-    memcpy(&gc->daddr.ipv6,&msgreq->daddr.ipv6,16);
-
-    saddr32 = (unsigned int *)&gc->saddr.ipv6;
-    daddr32 = (unsigned int *)&gc->daddr.ipv6;
-
-    printk("[NAS][CLASS] Adding IPv6 %X:%X:%X:%X -> %X.%X.%X.%X\n",
-           saddr32[0],saddr32[1],saddr32[2],saddr32[3],
-           daddr32[0],daddr32[1],daddr32[2],daddr32[3]);
-    gc->splen=msgreq->splen;
-    gc->dplen=msgreq->dplen;
-    break;
-
-  case NAS_MPLS_VERSION_CODE:
-
-    printk("[NAS][CLASS] Adding MPLS label %d with exp %d\n",
-           msgreq->daddr.mpls_label,msgreq->dscp);
-    gc->daddr.mpls_label = msgreq->daddr.mpls_label;
-
-    break;
-
-  case 0:
-    gc->saddr.ipv6.s6_addr32[0]=0;
-    gc->daddr.ipv6.s6_addr32[1]=0;
-    gc->saddr.ipv6.s6_addr32[2]=0;
-    gc->daddr.ipv6.s6_addr32[3]=0;
-    gc->splen=0;
-    gc->dplen=0;
-    break;
-
-  default:
-    msgrep->status=-NAS_ERROR_NOTCORRECTVERSION;
-    kfree(gc);
-    return;
+    default:
+      msgrep->status=-NAS_ERROR_NOTCORRECTVERSION;
+      kfree(gc);
+      return;
   }
 
   gc->protocol=msgreq->protocol;
@@ -597,11 +575,8 @@ int nas_ioCTL_class_add_request(struct nas_ioctl *gifr,
   //---------------------------------------------------------------------------
   struct nas_msg_class_add_request msgreq;
   struct nas_msg_class_add_reply msgrep;
-
-
   printk("NAS_IOCTL_CLASS_ADD: Add classifier components requested\n");
   printk("NAS_IOCTL_CLASS_ADD: size of gifr msg %zd\n", sizeof(gifr->msg));
-
 
   if (copy_from_user(&msgreq, gifr->msg, sizeof(msgreq))) {
     printk("NAS_IOCTL_CLASS_ADD: copy_from_user failure\n");
@@ -690,7 +665,6 @@ void nas_set_msg_measure_reply(struct nas_msg_measure_reply *msgrep, struct nas_
   struct cx_entity *cx;
   int lcr=0; // Temp lcr->mt =0
   int i;
-
   cx=nas_COMMON_search_cx(lcr,priv);
 
   if (cx!=NULL) {
@@ -739,8 +713,6 @@ void nas_set_msg_imei_reply(struct nas_msg_l2id_reply *msgrep,
   //---------------------------------------------------------------------------
   struct cx_entity *cx;
   int lcr=0; // Temp lcr->mt =0
-  int i;
-
   cx=nas_COMMON_search_cx(lcr,priv);
 
   if (cx!=NULL) {
@@ -776,74 +748,73 @@ int nas_CTL_ioctl(struct net_device *dev,
   //---------------------------------------------------------------------------
   struct nas_ioctl *gifr;
   struct nas_priv *priv=netdev_priv(dev);
-
   int r;
 
   //  printk("NAS_CTL_IOCTL: begin ioctl for instance %d\n",find_inst(dev));
 
   switch(cmd) {
-  case NAS_IOCTL_RRM:
-    gifr=(struct nas_ioctl *)ifr;
+    case NAS_IOCTL_RRM:
+      gifr=(struct nas_ioctl *)ifr;
 
-    switch(gifr->type) {
-    case NAS_MSG_STATISTIC_REQUEST:
-      r=nas_ioCTL_statistic_request(gifr,priv);
-      break;
+      switch(gifr->type) {
+        case NAS_MSG_STATISTIC_REQUEST:
+          r=nas_ioCTL_statistic_request(gifr,priv);
+          break;
 
-    case NAS_MSG_CX_ESTABLISHMENT_REQUEST:
-      r=nas_ioCTL_cx_establishment_request(gifr,priv);
-      break;
+        case NAS_MSG_CX_ESTABLISHMENT_REQUEST:
+          r=nas_ioCTL_cx_establishment_request(gifr,priv);
+          break;
 
-    case NAS_MSG_CX_RELEASE_REQUEST:
-      r=nas_ioCTL_cx_release_request(gifr,priv);
-      break;
+        case NAS_MSG_CX_RELEASE_REQUEST:
+          r=nas_ioCTL_cx_release_request(gifr,priv);
+          break;
 
-    case NAS_MSG_CX_LIST_REQUEST:
-      r=nas_ioCTL_cx_list_request(gifr,priv);
-      break;
+        case NAS_MSG_CX_LIST_REQUEST:
+          r=nas_ioCTL_cx_list_request(gifr,priv);
+          break;
 
-    case NAS_MSG_RB_ESTABLISHMENT_REQUEST:
-      r=nas_ioCTL_rb_establishment_request(gifr,priv);
-      break;
+        case NAS_MSG_RB_ESTABLISHMENT_REQUEST:
+          r=nas_ioCTL_rb_establishment_request(gifr,priv);
+          break;
 
-    case NAS_MSG_RB_RELEASE_REQUEST:
-      r= nas_ioCTL_rb_release_request(gifr,priv);
-      break;
+        case NAS_MSG_RB_RELEASE_REQUEST:
+          r= nas_ioCTL_rb_release_request(gifr,priv);
+          break;
 
-    case NAS_MSG_RB_LIST_REQUEST:
-      r=nas_ioCTL_rb_list_request(gifr,priv);
-      break;
+        case NAS_MSG_RB_LIST_REQUEST:
+          r=nas_ioCTL_rb_list_request(gifr,priv);
+          break;
 
-    case NAS_MSG_CLASS_ADD_REQUEST:
-      r=nas_ioCTL_class_add_request(gifr,priv);
-      break;
+        case NAS_MSG_CLASS_ADD_REQUEST:
+          r=nas_ioCTL_class_add_request(gifr,priv);
+          break;
 
-    case NAS_MSG_CLASS_LIST_REQUEST:
-      r=nas_ioCTL_class_list_request(gifr,priv);
-      break;
+        case NAS_MSG_CLASS_LIST_REQUEST:
+          r=nas_ioCTL_class_list_request(gifr,priv);
+          break;
 
-    case NAS_MSG_CLASS_DEL_REQUEST:
-      r=nas_ioCTL_class_del_request(gifr,priv);
-      break;
+        case NAS_MSG_CLASS_DEL_REQUEST:
+          r=nas_ioCTL_class_del_request(gifr,priv);
+          break;
 
-    case NAS_MSG_MEAS_REQUEST:
-      r=nas_ioCTL_measure_request(gifr,priv);
-      break;
+        case NAS_MSG_MEAS_REQUEST:
+          r=nas_ioCTL_measure_request(gifr,priv);
+          break;
 
-    case NAS_MSG_IMEI_REQUEST:
-      r=nas_ioCTL_imei_request(gifr,priv);
+        case NAS_MSG_IMEI_REQUEST:
+          r=nas_ioCTL_imei_request(gifr,priv);
+          break;
+
+        default:
+          //  printk("NAS_IOCTL_RRM: unkwon request type, type=%x\n", gifr->type);
+          r=-EFAULT;
+      }
+
       break;
 
     default:
-      //  printk("NAS_IOCTL_RRM: unkwon request type, type=%x\n", gifr->type);
+      //      printk("NAS_CTL_IOCTL: Unknown ioctl command, cmd=%x\n", cmd);
       r=-EFAULT;
-    }
-
-    break;
-
-  default:
-    //      printk("NAS_CTL_IOCTL: Unknown ioctl command, cmd=%x\n", cmd);
-    r=-EFAULT;
   }
 
   //  printk("NAS_CTL_IOCTL: end\n");
@@ -853,7 +824,7 @@ int nas_CTL_ioctl(struct net_device *dev,
 //---------------------------------------------------------------------------
 void nas_CTL_send(struct sk_buff *skb,
                   struct cx_entity *cx,
-                  struct classifier_entity *gc)
+                  struct classifier_entity *gc, int inst, struct nas_priv *gpriv)
 {
   //---------------------------------------------------------------------------
   printk("NAS_CTL_SEND - void \n");
