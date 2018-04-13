@@ -109,6 +109,7 @@ int s1ap_ue_context_release_complete(instance_t instance,
   }
 
   /* release 12 */
+#if (MAKE_VERSION(12,0,0) <= S1AP_VERSION)
   if (0) {
     ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
     ie->id = S1AP_ProtocolIE_ID_id_UserLocationInformation;
@@ -133,6 +134,7 @@ int s1ap_ue_context_release_complete(instance_t instance,
     // ie->value.choice.CellIdentifierAndCELevelForCECapableUEs = ;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
+#endif /* #if (MAKE_VERSION(12,0,0) <= S1AP_VERSION) */
 
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     /* Encode procedure has failed... */
@@ -259,6 +261,7 @@ int s1ap_ue_context_release_req(instance_t instance,
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* optional */
+#if (MAKE_VERSION(10,0,0) <= S1AP_VERSION)
   if (0) {
     ie = (S1AP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseRequest_IEs_t));
     ie->id = S1AP_ProtocolIE_ID_id_GWContextReleaseIndication;
@@ -267,6 +270,7 @@ int s1ap_ue_context_release_req(instance_t instance,
     ie->value.choice.GWContextReleaseIndication = TRUE;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
+#endif /* #if (MAKE_VERSION(10,0,0) <= S1AP_VERSION) */
 
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     /* Encode procedure has failed... */

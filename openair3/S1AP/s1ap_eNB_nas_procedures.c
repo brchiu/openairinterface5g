@@ -242,6 +242,7 @@ int s1ap_eNB_handle_nas_first_req(
   }
 
   /* optional */
+#if (MAKE_VERSION(9,0,0) <= S1AP_VERSION)
   if (0) {
     ie = (S1AP_InitialUEMessage_IEs_t *)calloc(1, sizeof(S1AP_InitialUEMessage_IEs_t));
     ie->id = S1AP_ProtocolIE_ID_id_CellAccessMode;
@@ -252,6 +253,7 @@ int s1ap_eNB_handle_nas_first_req(
   }
 
   /* optional */
+#if (MAKE_VERSION(10,0,0) <= S1AP_VERSION)
   if (0) {
     ie = (S1AP_InitialUEMessage_IEs_t *)calloc(1, sizeof(S1AP_InitialUEMessage_IEs_t));
     ie->id = S1AP_ProtocolIE_ID_id_GW_TransportLayerAddress;
@@ -271,6 +273,7 @@ int s1ap_eNB_handle_nas_first_req(
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
+#if (MAKE_VERSION(14,0,0) <= S1AP_VERSION)
   /* optional */
   if (0) {
     ie = (S1AP_InitialUEMessage_IEs_t *)calloc(1, sizeof(S1AP_InitialUEMessage_IEs_t));
@@ -360,6 +363,9 @@ int s1ap_eNB_handle_nas_first_req(
     // ie->value.choice.Coverage_Level = ue_release_req_p->eNB_ue_s1ap_id;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
+#endif /* #if (MAKE_VERSION(14,0,0) <= S1AP_VERSION) */
+#endif /* #if (MAKE_VERSION(10,0,0) <= S1AP_VERSION) */
+#endif /* #if (MAKE_VERSION(9,0,0) <= S1AP_VERSION) */
 
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     /* Failed to encode message */
@@ -601,6 +607,7 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* optional */
+#if (MAKE_VERSION(10,0,0) < S1AP_VERSION)
   if (0) {
     ie = (S1AP_UplinkNASTransport_IEs_t *)calloc(1, sizeof(S1AP_UplinkNASTransport_IEs_t));
     ie->id = S1AP_ProtocolIE_ID_id_GW_TransportLayerAddress;
@@ -611,6 +618,7 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
   }
 
   /* optional */
+#if (MAKE_VERSION(14,0,0) < S1AP_VERSION)
   if (0) {
     ie = (S1AP_UplinkNASTransport_IEs_t *)calloc(1, sizeof(S1AP_UplinkNASTransport_IEs_t));
     ie->id = S1AP_ProtocolIE_ID_id_SIPTO_L_GW_TransportLayerAddress;
@@ -629,6 +637,8 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
     // ie->value.choice.LHN_ID =;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
+#endif /* #if (MAKE_VERSION(14,0,0) < S1AP_VERSION) */
+#endif /* #if (MAKE_VERSION(10,0,0) < S1AP_VERSION) */
 
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     S1AP_ERROR("Failed to encode uplink NAS transport\n");
@@ -983,6 +993,7 @@ int s1ap_eNB_ue_capabilities(instance_t instance,
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* optional */
+#if (MAKE_VERSION(14,0,0) <= S1AP_VERSION)
   if (0) {
     ie = (S1AP_UECapabilityInfoIndicationIEs_t *)calloc(1, sizeof(S1AP_UECapabilityInfoIndicationIEs_t));
     ie->id = S1AP_ProtocolIE_ID_id_UERadioCapabilityForPaging;
@@ -991,6 +1002,7 @@ int s1ap_eNB_ue_capabilities(instance_t instance,
     // ie->value.choice.UERadioCapabilityForPaging = ;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
+#endif /* #if (MAKE_VERSION(14,0,0) <= S1AP_VERSION) */
 
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     /* Encode procedure has failed... */
@@ -1478,6 +1490,7 @@ int s1ap_eNB_e_rab_release_resp(instance_t instance,
   }
 
   /* optional */
+#if (MAKE_VERSION(14,0,0) <= S1AP_VERSION)
   if (0) {
     ie = (S1AP_E_RABReleaseResponseIEs_t *)calloc(1, sizeof(S1AP_E_RABReleaseResponseIEs_t));
     ie->id = S1AP_ProtocolIE_ID_id_CriticalityDiagnostics;
@@ -1496,6 +1509,7 @@ int s1ap_eNB_e_rab_release_resp(instance_t instance,
     // ie->value.choice.UserLocationInformation = ;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
+#endif /* #if (MAKE_VERSION(14,0,0) <= S1AP_VERSION) */
 
   fprintf(stderr, "start encode\n");
 

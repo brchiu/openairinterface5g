@@ -390,6 +390,7 @@ static int s1ap_eNB_generate_s1_setup_request(
   uint32_t  len;
   int       ret = 0;
   s1ap_mme_data_p->state = S1AP_ENB_STATE_WAITING;
+
   /* Prepare the S1AP message to encode */
   memset(&pdu, 0, sizeof(pdu));
   pdu.present = S1AP_S1AP_PDU_PR_initiatingMessage;
@@ -397,6 +398,7 @@ static int s1ap_eNB_generate_s1_setup_request(
   pdu.choice.initiatingMessage.criticality = S1AP_Criticality_reject;
   pdu.choice.initiatingMessage.value.present = S1AP_InitiatingMessage__value_PR_S1SetupRequest;
   out = &pdu.choice.initiatingMessage.value.choice.S1SetupRequest;
+
   ie = (S1AP_S1SetupRequestIEs_t *)calloc(1, sizeof(S1AP_S1SetupRequestIEs_t));
   ie->id = S1AP_ProtocolIE_ID_id_Global_ENB_ID;
   ie->criticality = S1AP_Criticality_reject;
@@ -427,13 +429,18 @@ static int s1ap_eNB_generate_s1_setup_request(
   ie->id = S1AP_ProtocolIE_ID_id_SupportedTAs;
   ie->criticality = S1AP_Criticality_reject;
   ie->value.present = S1AP_S1SetupRequestIEs__value_PR_SupportedTAs;
-  ta = (S1AP_SupportedTAs_Item_t *)calloc(1, sizeof(S1AP_SupportedTAs_Item_t));
-  INT16_TO_OCTET_STRING(instance_p->tac, &ta->tAC);
-  plmn = (S1AP_PLMNidentity_t *)calloc(1, sizeof(S1AP_PLMNidentity_t));
-  MCC_MNC_TO_TBCD(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length, plmn);
-  ASN_SEQUENCE_ADD(&ta->broadcastPLMNs.list, plmn);
-  ASN_SEQUENCE_ADD(&ie->value.choice.SupportedTAs.list, ta);
+  {
+    ta = (S1AP_SupportedTAs_Item_t *)calloc(1, sizeof(S1AP_SupportedTAs_Item_t));
+    INT16_TO_OCTET_STRING(instance_p->tac, &ta->tAC);
+    {
+      plmn = (S1AP_PLMNidentity_t *)calloc(1, sizeof(S1AP_PLMNidentity_t));
+      MCC_MNC_TO_TBCD(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length, plmn);
+      ASN_SEQUENCE_ADD(&ta->broadcastPLMNs.list, plmn);
+    }
+    ASN_SEQUENCE_ADD(&ie->value.choice.SupportedTAs.list, ta);
+  }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
   ie = (S1AP_S1SetupRequestIEs_t *)calloc(1, sizeof(S1AP_S1SetupRequestIEs_t));
   ie->id = S1AP_ProtocolIE_ID_id_DefaultPagingDRX;
   ie->criticality = S1AP_Criticality_ignore;
@@ -452,6 +459,7 @@ static int s1ap_eNB_generate_s1_setup_request(
   }
 
   /* optional */
+#if (MAKE_VERSION(14,0,0) <= S1AP_VERSION)
   if (0) {
     ie = (S1AP_S1SetupRequestIEs_t *)calloc(1, sizeof(S1AP_S1SetupRequestIEs_t));
     ie->id = S1AP_ProtocolIE_ID_id_UE_RetentionInformation  ;
@@ -470,6 +478,7 @@ static int s1ap_eNB_generate_s1_setup_request(
     // ie->value.choice.NB_IoT_DefaultPagingDRX = ;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
+#endif /* #if (MAKE_VERSION(14,0,0) <= S1AP_VERSION) */
 
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
     S1AP_ERROR("Failed to encode S1 setup request\n");

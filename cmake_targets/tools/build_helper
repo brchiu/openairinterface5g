@@ -660,9 +660,9 @@ install_asn1c_from_source(){
     (
     $SUDO rm -rf /tmp/asn1c
     # GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
-    git clone git checkout https://github.com/velichkov/asn1c /tmp/asn1c
+    git clone git checkout https://github.com/brchiu/asn1c /tmp/asn1c
     cd /tmp/asn1c
-    git checkout s1ap
+    git checkout velichkov_s1ap_plus_option_group
     ./configure
     make -j`nproc`
     $SUDO make install

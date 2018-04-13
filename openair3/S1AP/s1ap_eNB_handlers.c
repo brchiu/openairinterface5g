@@ -140,13 +140,13 @@ s1ap_message_decoded_callback messages_callback[][3] = {
   { 0, 0, 0 }, /* eNBConfigurationTransfer */
   { 0, 0, 0 }, /* MMEConfigurationTransfer */
   { 0, 0, 0 }, /* CellTrafficTrace */
-#if defined(UPDATE_RELEASE_9)
+#if (MAKE_VERSION(9,0,0) <= S1AP_VERSION)
   { 0, 0, 0 }, /* Kill */
   { 0, 0, 0 }, /* DownlinkUEAssociatedLPPaTransport  */
   { 0, 0, 0 }, /* UplinkUEAssociatedLPPaTransport */
   { 0, 0, 0 }, /* DownlinkNonUEAssociatedLPPaTransport */
   { 0, 0, 0 }, /* UplinkNonUEAssociatedLPPaTransport */
-#endif
+#endif /* #if (MAKE_VERSION(9,0,0) <= S1AP_VERSION) */
 };
 
 static const char *s1ap_direction2String[] = {
@@ -631,9 +631,11 @@ int s1ap_eNB_handle_error_indication(uint32_t         assoc_id,
             S1AP_WARN("Received S1 Error indication S1AP_CauseRadioNetwork_not_supported_QCI_value\n");
             break;
 
+#if (MAKE_VERSION(9,0,0) <= S1AP_VERSION)
           case S1AP_CauseRadioNetwork_invalid_CSG_Id:
             S1AP_WARN("Received S1 Error indication S1AP_CauseRadioNetwork_invals1ap_id_CSG_Id\n");
             break;
+#endif /* #if (MAKE_VERSION(9,0,0) <= S1AP_VERSION) */
 
           default:
             S1AP_WARN("Received S1 Error indication cause radio network case not handled\n");
@@ -675,9 +677,11 @@ int s1ap_eNB_handle_error_indication(uint32_t         assoc_id,
             S1AP_WARN("Received S1 Error indication S1AP_CauseNas_unspecified\n");
             break;
 
+#if (MAKE_VERSION(9,0,0) <= S1AP_VERSION)
           case S1AP_CauseNas_csg_subscription_expiry:
             S1AP_WARN("Received S1 Error indication S1AP_CauseNas_csg_subscription_expiry\n");
             break;
+#endif /* #if (MAKE_VERSION(9,0,0) <= S1AP_VERSION) */
 
           default:
             S1AP_WARN("Received S1 Error indication cause nas case not handled\n");
