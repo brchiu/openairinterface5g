@@ -2488,7 +2488,8 @@ endforeach()
 # force castxml and clang compilation with gnu89 standard
 # we can't use cXX standard as pthread_rwlock_t is gnu standard
 list(APPEND itti_compiler_options "-std=gnu89")
-set (ITTI_H ${ITTI_DIR}/intertask_interface_types.h)
+#set (ITTI_H ${ITTI_DIR}/intertask_interface_types.h)
+set (ITTI_H ${OPENAIR_DIR}/common/utils/T/defs.h)
 if(EXISTS /usr/bin/gccxml)
    set(xml_command gccxml ${itti_compiler_options} -fxml=${OPENAIR_BIN_DIR}/messages.xml ${ITTI_H})
 else()
