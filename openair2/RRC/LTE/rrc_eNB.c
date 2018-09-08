@@ -101,6 +101,7 @@
 #endif
 
 #include "SIMULATION/TOOLS/sim.h" // for taus
+#include "ws_trace.h"
 
 
 extern RAN_CONTEXT_t RC;
@@ -5968,6 +5969,7 @@ rrc_eNB_decode_ccch(
                100,
                0,
                0);
+  send_ws_log(LTE_RRC_UL_CCCH, 0, Srb_info->Rx_buffer.Payload, dec_rval.consumed);
 
   /*
 #if defined(ENABLE_ITTI)
@@ -6535,7 +6537,7 @@ rrc_eNB_decode_dcch(
                sdu_sizeP,
                0,
                0);
-
+  send_ws_log(LTE_RRC_UL_DCCH, 0, Rx_sdu, sdu_sizeP);
   {
     for (i = 0; i < sdu_sizeP; i++) {
       LOG_T(RRC, "%x.", Rx_sdu[i]);
@@ -6997,6 +6999,11 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
       if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
          xer_fprint(stdout, &asn_DEF_UE_EUTRA_Capability, ue_context_p->ue_context.UE_Capability);
       }
+      send_ws_log(LTE_RRC_UE_EUTRA_CAP, 0, ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
+                             choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
+                             array[0]->ueCapabilityRAT_Container.buf, ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
+                             choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
+                             array[0]->ueCapabilityRAT_Container.size);
 
       if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
         LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Failed to decode UE capabilities (%zu bytes)\n",
@@ -7218,6 +7225,7 @@ rrc_enb_task(
 
   protocol_ctxt_t                     ctxt;
 
+  start_ws_trace();
   pthread_mutex_init(&lock_ue_freelist, NULL);
   pthread_mutex_init(&rrc_release_freelist, NULL);
   memset(&rrc_release_info,0,sizeof(RRC_release_list_t));
@@ -7234,6 +7242,7 @@ rrc_enb_task(
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
       LOG_W(RRC, " *** Exiting RRC thread\n");
+      stop_ws_trace();
       itti_exit_task();
       break;
 

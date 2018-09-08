@@ -86,6 +86,7 @@
 
 #include "common/ran_context.h"
 #include "secu_defs.h"
+#include "ws_trace.h"
 
 #if !defined (msg)
 #define msg printf
@@ -246,7 +247,7 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
                                    24);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
-
+  send_ws_log(LTE_RRC_BCCH_BCH, 0, carrier->MIB, (enc_rval.encoded + 7) / 8);
   /*
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
@@ -326,7 +327,7 @@ uint8_t do_MIB_SL(const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index,
                                    24);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
-
+  send_ws_log(LTE_RRC_SBCCH_SL_BCH, 0, UE_rrc_inst[ctxt_pP->module_id].MIB, (enc_rval.encoded + 7) / 8);
 
   if (enc_rval.encoded==-1) {
     return(-1);
@@ -516,7 +517,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
                                    100);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
-
+  send_ws_log(LTE_RRC_BCCH_DL_SCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -1362,7 +1363,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
                                    900);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
-
+  send_ws_log(LTE_RRC_BCCH_DL_SCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
@@ -1450,7 +1451,7 @@ uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv)
                                    100);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
-
+  send_ws_log(LTE_RRC_UL_CCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -1618,7 +1619,7 @@ uint8_t do_SidelinkUEInformation(uint8_t Mod_id, uint8_t *buffer,  SL_Destinatio
          100);
    AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
          enc_rval.failed_type->name, enc_rval.encoded);
-
+  send_ws_log(LTE_RRC_UL_DCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
    {
@@ -1703,7 +1704,7 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uin
                                    100);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
-
+  send_ws_log(LTE_RRC_UL_DCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -1764,7 +1765,7 @@ do_RRCConnectionReconfigurationComplete(
                                    100);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
-
+  send_ws_log(LTE_RRC_UL_DCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -2178,6 +2179,7 @@ do_RRCConnectionSetup(
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
+  send_ws_log(LTE_RRC_DL_CCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -2333,6 +2335,7 @@ do_UECapabilityEnquiry(
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
+  send_ws_log(LTE_RRC_DL_DCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -2541,6 +2544,7 @@ do_RRCConnectionReconfiguration(
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
      xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)&dl_dcch_msg);
   }
+  send_ws_log(LTE_RRC_DL_DCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
@@ -2755,6 +2759,7 @@ do_RRCConnectionReestablishment(
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
+  send_ws_log(LTE_RRC_DL_CCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -2817,6 +2822,7 @@ do_RRCConnectionReestablishmentReject(
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
+  send_ws_log(LTE_RRC_DL_CCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -2880,6 +2886,7 @@ do_RRCConnectionReject(
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
+  send_ws_log(LTE_RRC_DL_CCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -2940,7 +2947,7 @@ uint8_t do_RRCConnectionRelease(
                                    (void*)&dl_dcch_msg,
                                    buffer,
                                    RRC_BUF_SIZE);
-
+  send_ws_log(LTE_RRC_DL_DCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
   return((enc_rval.encoded+7)/8);
 }
 
@@ -3074,6 +3081,7 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
+  send_ws_log(LTE_RRC_MCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -3207,6 +3215,7 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
+  send_ws_log(LTE_RRC_UL_DCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -3250,7 +3259,7 @@ uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t trans
   dl_dcch_msg.message.choice.c1.choice.dlInformationTransfer.criticalExtensions.choice.c1.choice.dlInformationTransfer_r8.dedicatedInfoType.choice.dedicatedInfoNAS.buf = pdu_buffer;
 
   encoded = uper_encode_to_new_buffer (&asn_DEF_DL_DCCH_Message, NULL, (void*) &dl_dcch_msg, (void **) buffer);
-
+  send_ws_log(LTE_RRC_DL_DCCH, 0, *buffer, encoded);
   /*
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
@@ -3341,6 +3350,7 @@ uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_pagin
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
      xer_fprint(stdout, &asn_DEF_PCCH_Message, (void*)&pcch_msg);
   }
+  send_ws_log(LTE_RRC_PCCH, 0, buffer, (enc_rval.encoded + 7) / 8);
 
   return((enc_rval.encoded+7)/8);
 }
@@ -3363,7 +3373,7 @@ uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t 
   ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType.choice.dedicatedInfoNAS.buf = pdu_buffer;
 
   encoded = uper_encode_to_new_buffer (&asn_DEF_UL_DCCH_Message, NULL, (void*) &ul_dcch_msg, (void **) buffer);
-
+  send_ws_log(LTE_RRC_UL_DCCH, 0, *buffer, encoded);
   return encoded;
 }
 
@@ -3513,7 +3523,7 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname)
                                    MAX_UE_CAPABILITY_SIZE);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
-
+  send_ws_log(LTE_RRC_UE_EUTRA_CAP, 0, &UECapability.sdu[0], (enc_rval.encoded + 7) / 8);
 #if defined(ENABLE_ITTI)
 # if defined(DISABLE_XER_SPRINT)
   {

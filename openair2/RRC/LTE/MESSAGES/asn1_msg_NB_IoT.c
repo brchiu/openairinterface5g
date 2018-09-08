@@ -39,7 +39,7 @@
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
 #include "asn1_msg.h"
-
+#include "ws_trace.h"
 
 
 //#include for NB-IoT-------------------
@@ -139,7 +139,7 @@ uint8_t do_MIB_NB_IoT(
       LOG_E(RRC, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   }
-
+  send_ws_log(LTE_RRC_BCCH_BCH_NB, 0, carrier->MIB_NB_IoT, (enc_rval.encoded + 7) / 8);
   if (enc_rval.encoded==-1) {
     return(-1);
   }
@@ -397,7 +397,7 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
        LOG_E(RRC,"ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   }
-
+  send_ws_log(LTE_RRC_BCCH_DL_SCH_NB, 0, carrier->SIB1_NB_IoT, (enc_rval.encoded + 7) / 8);
 
 #ifdef USER_MODE
   LOG_D(RRC,"[NB-IoT] SystemInformationBlockType1-NB Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
@@ -689,6 +689,7 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
     msg("[RRC] ASN1 : SI-NB encoding failed for SIB23_NB_IoT\n");
     return(-1);
   }
+  send_ws_log(LTE_RRC_BCCH_DL_SCH_NB, 0, carrier->SIB23_NB_IoT, (enc_rval.encoded + 7) / 8);
 
   carrier->sib2_NB_IoT = sib2_NB_IoT;
   carrier->sib3_NB_IoT = sib3_NB_IoT;
@@ -900,6 +901,7 @@ uint8_t do_RRCConnectionSetup_NB_IoT(
      LOG_E(RRC, "ASN1 message encoding failed (%s, %lu)!\n",
               enc_rval.failed_type->name, enc_rval.encoded);
  }
+ send_ws_log(LTE_RRC_DL_CCCH_NB, 0, buffer, (enc_rval.encoded + 7) / 8);
 
 #ifdef USER_MODE
  LOG_D(RRC,"RRCConnectionSetup-NB Encoded %zd bits (%zd bytes), ecause %d\n",
@@ -951,7 +953,7 @@ uint8_t do_SecurityModeCommand_NB_IoT(
       LOG_E(RRC, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   }
-
+  send_ws_log(LTE_RRC_DL_DCCH_NB, 0, buffer, (enc_rval.encoded + 7) / 8);
 
 //#if defined(ENABLE_ITTI)
 //# if !defined(DISABLE_XER_SPRINT)....
@@ -1013,7 +1015,7 @@ uint8_t do_UECapabilityEnquiry_NB_IoT(
      LOG_E(RRC, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
     }
-
+  send_ws_log(LTE_RRC_DL_DCCH_NB, 0, buffer, (enc_rval.encoded + 7) / 8);
 //#if defined(ENABLE_ITTI)
 //# if !defined(DISABLE_XER_SPRINT)....
 
@@ -1108,7 +1110,7 @@ uint16_t do_RRCConnectionReconfiguration_NB_IoT(
      LOG_E(RRC, "ASN1 message encoding failed %s, %li\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   }
-
+  send_ws_log(LTE_RRC_DL_DCCH_NB, 0, buffer, (enc_rval.encoded + 7) / 8);
   //changed only asn_DEF_DL_DCCH_Message_NB
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
      xer_fprint(stdout,&asn_DEF_DL_DCCH_Message_NB,(void*)&dl_dcch_msg_NB_IoT);
@@ -1155,6 +1157,7 @@ uint8_t do_RRCConnectionReestablishmentReject_NB_IoT(
      LOG_E(RRC,"ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   }
+  send_ws_log(LTE_RRC_DL_CCCH_NB, 0, buffer, (enc_rval.encoded + 7) / 8);
 
   //Only change in "asn_DEF_DL_CCCH_Message_NB"
 #if defined(ENABLE_ITTI)
@@ -1226,6 +1229,7 @@ uint8_t do_RRCConnectionReject_NB_IoT(
      LOG_E(RRC, "ASN1 message encoding failed (%s, %ld)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   }
+  send_ws_log(LTE_RRC_DL_DCCH_NB, 0, buffer, (enc_rval.encoded + 7) / 8);
 
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
@@ -1282,6 +1286,7 @@ uint8_t do_DLInformationTransfer_NB_IoT(
   dl_dcch_msg_NB_IoT.message.choice.c1.choice.dlInformationTransfer_r13.criticalExtensions.choice.c1.choice.dlInformationTransfer_r13.dedicatedInfoNAS_r13.buf = pdu_buffer;
 
   encoded = uper_encode_to_new_buffer (&asn_DEF_DL_DCCH_Message_NB, NULL, (void*) &dl_dcch_msg_NB_IoT, (void **) buffer);
+  send_ws_log(LTE_RRC_DL_DCCH_NB, 0, *buffer, encoded);
 
   //only change in "asn_DEF_DL_DCCH_Message_NB"
 #if defined(ENABLE_ITTI)
@@ -1358,6 +1363,7 @@ uint8_t do_RRCConnectionReestablishment_NB_IoT(
         if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
            xer_fprint(stdout,&asn_DEF_DL_CCCH_Message_NB,(void*)&dl_ccch_msg_NB_IoT);
         }
+        send_ws_log(LTE_RRC_DL_DCCH_NB, 0, buffer, (enc_rval.encoded + 7) / 8);
 
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
@@ -1419,6 +1425,7 @@ uint8_t do_RRCConnectionRelease_NB_IoT(
                                    (void*)&dl_dcch_msg_NB_IoT,
                                    buffer,
                                    RRC_BUF_SIZE);//check
+  send_ws_log(LTE_RRC_DL_DCCH_NB, 0, buffer, (enc_rval.encoded + 7) / 8);
 
   return((enc_rval.encoded+7)/8);
 }
