@@ -84,7 +84,7 @@ __global__ void BNProcess(int *const_llr, int *bnbuf, int *cnbuf, int *c2b_idx, 
 	__syncthreads();
 }
 
-__global__ void BN2llr(int *bnbuf, int *llrbuf, int *llr_idx)
+__global__ void BN2llr(int *const_llr, int *bnbuf, int *llrbuf, int *llr_idx)
 {
 	int tid = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -95,7 +95,7 @@ __global__ void BN2llr(int *bnbuf, int *llrbuf, int *llr_idx)
 	for(int i = start; i < end; i++){
 		res += bnbuf[i];
 	}
-	llrbuf[tid] = res;
+	llrbuf[tid] = res + const_llr[tid];
 	__syncthreads();
 }
 
@@ -210,23 +210,24 @@ int main(int argc, char **argv)
 	print_arr("debug/const_llrbuf_d", const_llrbuf_d, 316*384);
 */
 
-	char debug[] = "debug/";
-	char cn[] = "cnbuf";
-	char bn[] = "bnbuf";
-	char llrstr[] = "llrbuf_d";
+	char dir[] = "debug/", cn[] = "cnbuf", bn[] = "bnbuf", llrstr[] = "llrbuf_d";
 	char str[100] = {};
 	for(int i = 0; i < rounds; i++){
 		CNProcess<<<blockNum, threadNum>>>(cnbuf_d, bnbuf_d, b2c_idx_d, cnproc_idx_d);
-	//	snprintf(str, 20, "%s%s_%d", debug, bn, i+1);
-	//	print_arr(str, bnbuf_d, 316*384);
-
+#ifdef debug
+		snprintf(str, 20, "%s%s_%d", dir, bn, i+1);
+		print_arr(str, bnbuf_d, 316*384);
+#endif
 		BNProcess<<<blockNum, threadNum>>>(const_llr_d, bnbuf_d, cnbuf_d, c2b_idx_d, bnproc_idx_d);
-	//	snprintf(str, 20, "%s%s_%d", debug, cn, i+1);
-	//	print_arr(str, cnbuf_d, 316*384);
-
-		BN2llr<<<51, 512>>>(bnbuf_d, llrbuf_d, llr_idx_d);
-	//	snprintf(str, 20, "%s%s_%d", debug, llrstr, i+1);
-	//	print_arr(str, llrbuf_d, 26112);
+#ifdef debug
+		snprintf(str, 20, "%s%s_%d", dir, cn, i+1);
+		print_arr(str, cnbuf_d, 316*384);
+#endif
+		BN2llr<<<51, 512>>>(llr_d, bnbuf_d, llrbuf_d, llr_idx_d);
+#ifdef debug
+		snprintf(str, 20, "%s%s_%d", dir, llrstr, i+1);
+		print_arr(str, llrbuf_d, 26112);
+#endif
 	}
 
 	BitDetermination<<<33, 256>>>(llrbuf_d, decode_output_d);
