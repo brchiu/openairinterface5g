@@ -75,6 +75,9 @@ __global__ void BNProcess(int *const_llr, int *bnbuf, int *cnbuf, int *c2b_idx, 
 	int start = bnproc_idx[tid*2];
 	int end = bnproc_idx[tid*2+1];
 	
+//	int arr[35] = {};
+//	get_data<<<1, end-start>>>(arr)
+
 	int val = 0;
 	for(int i = start; i < end; i++){
 		if(i == tid)	continue;
@@ -192,14 +195,14 @@ int main(int argc, char **argv)
 	cudaDeviceSynchronize();
 
 
-/*
+
 	cudaEvent_t start, end;
 	float time;
 
 	cudaEventCreate(&start);
 	cudaEventCreate(&end);
 	cudaEventRecord(start, 0);
-*/
+
 
 	llr2CN<<<blockNum, threadNum>>>(llr_d, cnbuf_d, l2c_idx_d);
 	llr2BN<<<blockNum, threadNum>>>(llr_d, const_llr_d, l2b_idx_d);
@@ -233,12 +236,12 @@ int main(int argc, char **argv)
 	BitDetermination<<<33, 256>>>(llrbuf_d, decode_output_d);
 	cudaDeviceSynchronize();
 
-/*
+
 	cudaEventRecord(end, 0);
 	cudaEventSynchronize(end);
 	cudaEventElapsedTime(&time, start, end);
 	printf("time: %.6f ms\n", time);
-*/
+
 
 	int err = 0;
 	for(int i = 0; i < 8448/8; i++){

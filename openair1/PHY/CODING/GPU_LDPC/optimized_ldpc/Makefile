@@ -15,6 +15,9 @@ test: ldpc
 cgdb: clean ldpc
 	cuda-gdb --silent --args ldpc test_input.txt
 
+prof: clean ldpc
+	nvprof ./ldpc test_input.txt
+
 .PHONY: clean
 clean:
 	$(RM) -rf $(DEBUG) $(EXEC) $(TXT) ldpc log.txt channel_output.txt
