@@ -5,7 +5,7 @@ exec = ldpc
 file = channel_output.txt 
 OBJS = util.o
 code = 8448
-
+num = 1
 .PHONY: clean debug
 
 
@@ -18,12 +18,14 @@ $(exec): $(exec).cu $(OBJS)
 	$(NVCC) $(CFLAGS) -o $@ $^
 
 %.o: %.cu
+	cp ../test_input/8448/$(num).txt $(file)
 	$(NVCC) $(CFLAGS) -o $@ -c $<
 
 run: clean $(exec)
 	./$(exec) -l $(code) -f $(file)
 
 prof: clean $(exec)
+	cp ../test_input/8448/$(num).txt $(file)
 	$(PROF) ./$(exec) -l $(code) -f  $(file)
 
 test: clean $(exec)
