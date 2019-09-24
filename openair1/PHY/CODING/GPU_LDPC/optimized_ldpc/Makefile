@@ -9,7 +9,7 @@ gen: clean gen_idx.c
 
 ldpc: clean ldpc.cu 
 	cp ../test_input/8448/$(num).txt $(FILE)
-	nvcc ldpc.cu -o ldpc -g -G
+	nvcc -arch=compute_70 -rdc=true ldpc.cu -o ldpc -g -G
 	mkdir debug
 
 test: ldpc

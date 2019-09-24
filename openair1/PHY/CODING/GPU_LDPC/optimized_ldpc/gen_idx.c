@@ -2,15 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 #ifndef test
-#include "isip_ldpc_bg1_i1.h"
+#include "../BGs/isip_ldpc_bg1_i1.h"
 #endif
 int l2c_idx[316*384] = {};		// cnbuf[ tid ] = llr[ l2c_idx[tid] ]
 int l2b_idx[316*384] = {};		// bnbuf[ tid ] = llr[ l2b_idx[tid] ]
 int llr_idx[26113] = {};		// bnbuf2llr, start = llr_idx[tid], end = llr_idx[tid+1], llrbuf[tid] = sum of (bnbuf[start] to bnbuf[end])
 int c2b_idx[316*384] = {};    	// bnbuf[ tid ] = cnbuf[ c2b_idx[tid] ]
 int b2c_idx[316*384] = {};		// cnbuf[ tid ] = bnbuf[ b2c_idx[tid] ]
-int cnproc_idx[316*384*2] = {};	// index for cnproc, start = cnproc_idx[tid], end = cnproc_idx[tid+1]
-int bnproc_idx[316*384*2] = {};	// index for bnproc, start = bnproc_idx[tid], end = bnproc_idx[tid+1]
+int cnproc_start_idx[316*384] = {};	// index for cnproc, int start = cnproc_start_idx[tid]
+int cnproc_end_idx[316*384] = {};	// index for cnproc, int end = cnproc_end_idx[tid]
+int bnproc_start_idx[316*384] = {};	// index for bnproc, int start = bnproc_start_idx[tid]
+int bnproc_end_idx[316*384] = {};	// index for bnproc, int end = bnproc_end_idx[tid]
 
 int *matrix_transpose(int *matrix, int row, int col)
 {
@@ -89,8 +91,9 @@ void build_index(const int *BG, int row, int col, int Zc)
 		}
 		end = start + cnt;
 		while(cnt--){
-			bnproc_idx[pidx++] = start;
-			bnproc_idx[pidx++] = end;
+			bnproc_start_idx[pidx] = start;
+			bnproc_end_idx[pidx] = end;
+			pidx++;
 		}
 	}
 
@@ -126,8 +129,9 @@ void build_index(const int *BG, int row, int col, int Zc)
 		}
 		end = start + cnt;
 		while(cnt--){
-			cnproc_idx[pidx++] = start;
-			cnproc_idx[pidx++] = end;
+			cnproc_start_idx[pidx] = start;
+			cnproc_end_idx[pidx] = end;
+			pidx++;
 		}
 	}	
 	
@@ -147,8 +151,10 @@ void generate_header(const char *file, int col, int entry, int Zc)
 	write_to_file(f, "int l2c_idx", l2c_idx, entry*Zc);
 	write_to_file(f, "int c2b_idx", c2b_idx, entry*Zc);
 	write_to_file(f, "int b2c_idx", b2c_idx, entry*Zc);
-	write_to_file(f, "int cnproc_idx", cnproc_idx, entry*Zc*2);
-	write_to_file(f, "int bnproc_idx", bnproc_idx, entry*Zc*2);
+	write_to_file(f, "int cnproc_start_idx", cnproc_start_idx, entry*Zc);
+	write_to_file(f, "int cnproc_end_idx", cnproc_end_idx, entry*Zc);
+	write_to_file(f, "int bnproc_start_idx", bnproc_start_idx, entry*Zc);
+	write_to_file(f, "int bnproc_end_idx", bnproc_end_idx, entry*Zc);
 	write_to_file(f, "int llr_idx", llr_idx, col*Zc+1);
 	write_to_file(f, "int l2b_idx", l2b_idx, entry*Zc);
 
