@@ -160,6 +160,7 @@ void Read_Data(char *filename, int *data_sent, float *data_received)
 
 int main(int argc, char **argv)
 {
+	int code_length = 8448, BG = 1;
 	int *input = (int*)malloc(1056*sizeof(int));
 	float *llr = (float*)malloc(26112*sizeof(float));
 
@@ -214,6 +215,8 @@ int main(int argc, char **argv)
 	cudaHostGetDevicePointer((void**)&decode_output_d, (void*)decode_output_h, 0);
 	cudaDeviceSynchronize();
 
+
+	printf("BG %d, Zc %d, code_length %d\n", BG, Zc, code_length);
 
 
 	cudaEvent_t start, end;
