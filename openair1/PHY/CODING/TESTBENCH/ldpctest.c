@@ -27,6 +27,7 @@
 #include "SIMULATION/TOOLS/sim.h"
 #include "PHY/CODING/nrLDPC_encoder/defs.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
+#include "PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 
 #define MAX_NUM_DLSCH_SEGMENTS 16
@@ -317,7 +318,6 @@ int test_ldpc(short No_iteration,
         for (i = 0; i < block_length+(nrows-no_punctured_columns) * Zc - removed_bit; i++)
           if (channel_input[j][i]!=channel_input_optim[j][i]) {
             printf("differ in seg %u pos %u (%u,%u)\n", j, i, channel_input[j][i], channel_input_optim[j][i]);
-            free(channel_output);
             return (-1);
           }
       //else{
@@ -392,18 +392,24 @@ int test_ldpc(short No_iteration,
       decParams.numMaxIter=No_iteration;
       decParams.outMode = nrLDPC_outMode_BIT;
       //decParams.outMode =nrLDPC_outMode_LLRINT8;
+      //decParams.outMode =nrLDPC_outMode_LLRINT8;
 
 
       for(j=0;j<n_segments;j++) {
-    	  start_meas(time_decoder);
       // decode the sequence
       // decoder supports BG2, Z=128 & 256
       //esimated_output=ldpc_decoder(channel_output_fixed, block_length, No_iteration, (double)((float)nom_rate/(float)denom_rate));
       ///nrLDPC_decoder(&decParams, channel_output_fixed, estimated_output, NULL);
-          n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_nrLDPC_procBuf, p_decoder_profiler);
-      
-	stop_meas(time_decoder);
+#ifdef __NR_LDPC_DECODER_LYC__H__
+		 n_iter = nrLDPC_decoder_LYC(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], block_length, time_decoder);
+#else
+		 start_meas(time_decoder);
+		 n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_nrLDPC_procBuf, p_decoder_profiler);
+		 stop_meas(time_decoder);
+#endif      
+	
       }
+
 
       //for (i=(Kb+nrows) * Zc-5;i<(Kb+nrows) * Zc;i++)
       //  printf("esimated_output[%d]=%d\n",i,esimated_output[i]);
@@ -413,9 +419,9 @@ int test_ldpc(short No_iteration,
       for (i=0; i<block_length>>3; i++)
       {
           //printf("block_length>>3: %d \n",block_length>>3);
-         /// printf("i: %d \n",i);
-          ///printf("estimated_output[%d]: %d \n",i,estimated_output[i]);
-          ///printf("test_input[0][%d]: %d \n",i,test_input[0][i]);
+          // printf("i: %d \n",i);
+          // printf("estimated_output[%d]: %d \n",i,estimated_output[i]);
+          // printf("test_input[0][%d]: %d \n",i,test_input[0][i]);
         if (estimated_output[j][i] != test_input[j][i])
         {
       //////printf("error pos %d (%d, %d)\n\n",i,estimated_output[i],test_input[0][i]);
@@ -460,6 +466,7 @@ int test_ldpc(short No_iteration,
 
   *errors_bit_uncoded = *errors_bit_uncoded / (double)((Kb+nrows-no_punctured_columns-2) * Zc-removed_bit);
 
+int k=0;
   for(j=0;j<MAX_NUM_DLSCH_SEGMENTS;j++) {
     free(test_input[j]);
     free(channel_input[j]);
