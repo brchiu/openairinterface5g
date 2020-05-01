@@ -20,11 +20,11 @@
  */
 
 /*!\file SIMULATION/NR_PHY/dlsim.c
- * \brief Implementation of dual thread by using multi threads
+ * \brief Parameterize dual thread
  * \author Terngyin, NY, GK, KM (OpInConnect_NCTU)
  * \email tyhsu@cs.nctu.edu.tw
- * \date 24-04-2020
- * \version 1.1
+ * \date 01-05-2020
+ * \version 1.2
  * \note
  * \warning
  */
@@ -74,6 +74,7 @@
 
 #include "PHY/CODING/nrLDPC_encoder/defs.h"
 struct timespec start_enc_ts[4], end_enc_ts[4];	//timespec
+//multi_ldpc_encoder_gNB ldpc_enc[thread_num_pdsch];  //things in ldpc_encoder
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
@@ -298,7 +299,8 @@ static void *dlsch_encoding_proc(void *ptr){
 }
   
 //[START]multi_genetate_pdsch_proc
-struct timespec start_encoder_ts[2], end_encoder_ts[2], start_perenc_ts[2], end_perenc_ts[2];
+struct timespec start_encoder_ts[thread_num_pdsch], end_encoder_ts[thread_num_pdsch], start_perenc_ts[thread_num_pdsch], end_perenc_ts[thread_num_pdsch];
+//int thread_num_pdsch = 2; //Craete 2 threads for temp
 // int ifRand = 0;
 int vcd = 0;
 static void *multi_genetate_pdsch_proc(void *ptr){
@@ -322,9 +324,14 @@ static void *multi_genetate_pdsch_proc(void *ptr){
 	  //       ldpc_enc[test->id].block_length,
 	  //       ldpc_enc[test->id].n_segments);
 
-	  int j_start, j_end;
-	  j_start = 0;
-	  j_end = (gNB->multi_encoder[test->id].n_segments/8+1);
+	  int j_start, j_end; //Check if our situation((n_segments > 7)&(thread_num_pdsch == 2))
+	  if((gNB->multi_encoder[test->id].n_segments > 7)&&(thread_num_pdsch == 2)){
+	    j_start = test->id;
+	    j_end = j_start + 1;
+	  }else{
+	    j_start = 0;
+	    j_end = (gNB->multi_encoder[test->id].n_segments/8+1);
+	  }
 	  int offset = test->id>7?7:test->id;
 	  //printf("[OFFSET] : %d %d\n", offset, test->id);
 	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTI_ENC_0 + offset,1);
@@ -1050,7 +1057,7 @@ int main(int argc, char **argv)
  //  }
 
   //[START]multi_genetate_pdsch_proc:create thread
-  for(int th=0;th<2;th++){
+  for(int th=0;th<thread_num_pdsch;th++){
     pthread_attr_init(&(gNB->multi_encoder[th].attr));
     pthread_mutex_init(&(gNB->multi_encoder[th].mutex), NULL);
     pthread_mutex_init(&(gNB->multi_encoder[th].mutex_scr_mod), NULL);
@@ -1428,7 +1435,7 @@ int main(int argc, char **argv)
 //[START]Send Kill massage
   oai_exit = 1;	// ==We should do for threading ==***
   printf("Kill them all!\n");
-  for(int th=0; th<2; th++){
+  for(int th=0; th<thread_num_pdsch; th++){
   	  pthread_cond_signal(&(gNB->multi_encoder[th].cond));
 	}
 //[END]Send Kill massage
